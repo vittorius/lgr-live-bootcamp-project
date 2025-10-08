@@ -6,7 +6,7 @@ pub struct TestApp {
     pub http_client: reqwest::Client,
 }
 
-const FAILED_TO_EXECUTE_REQUEST: &'static str = "Failed to execute request";
+const FAILED_TO_EXECUTE_REQUEST: &str = "Failed to execute request";
 
 impl TestApp {
     pub async fn new() -> Self {
