@@ -1,5 +1,7 @@
 use auth_service::Application;
+use serde::Serialize;
 use serde_json::json;
+use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
@@ -34,22 +36,20 @@ impl TestApp {
             .expect(FAILED_TO_EXECUTE_REQUEST)
     }
 
-    pub async fn signup(
-        &self,
-        email: &str,
-        password: &str,
-        requires_2fa: bool,
-    ) -> reqwest::Response {
+    pub async fn post_signup<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: Serialize,
+    {
         self.http_client
             .post(format!("{}/signup", &self.address))
-            .json(&json!({
-                "email": email,
-                "password": password,
-                "requires2FA": requires_2fa,
-            }))
+            .json(body)
             .send()
             .await
             .expect(FAILED_TO_EXECUTE_REQUEST)
+    }
+
+    pub fn get_random_email() -> String {
+        format!("{}@example.com", Uuid::new_v4())
     }
 
     pub async fn login(&self, email: &str, password: &str) -> reqwest::Response {
