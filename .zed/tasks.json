@@ -12,21 +12,21 @@
     "cwd": "$ZED_WORKTREE_ROOT/auth-service"
   },
   {
-    "label": "clippy fix",
+    "label": "cargo clippy fix",
     "command": "cargo clippy --fix --allow-dirty"
   },
   {
-    "label": "compose build",
+    "label": "docker compose build",
     "command": "docker compose build",
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "compose up",
+    "label": "docker compose up",
     "command": "docker compose up",
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "compose down",
+    "label": "docker compose down",
     "command": "docker compose down",
     "cwd": "$ZED_WORKTREE_ROOT"
   },
