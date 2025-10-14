@@ -26,6 +26,11 @@
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
+    "label": "compose down",
+    "command": "docker compose down",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
     "label": "cargo nextest $ZED_CUSTOM_RUST_TEST_NAME",
     "command": "cargo nextest run $ZED_CUSTOM_RUST_TEST_NAME",
     "tags": ["rust-test", "rust-mod-test"]
