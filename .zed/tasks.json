@@ -41,7 +41,7 @@
     "tags": ["rust-mod-test"]
   },
   {
-    "label": "cargo nextest",
+    "label": "cargo nextest run",
     "command": "cargo nextest run"
   }
 ]
