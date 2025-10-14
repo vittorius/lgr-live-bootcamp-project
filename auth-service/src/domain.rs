@@ -1,3 +1,3 @@
 mod user;
 
-pub use user::*;
+pub(crate) use user::*;
