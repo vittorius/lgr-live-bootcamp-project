@@ -1,12 +1,13 @@
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Password(String);
 
 #[derive(Debug)]
-enum PasswordError {
+pub enum PasswordError {
     TooShort,
 }
 
 impl Password {
-    fn parse(password: &str) -> Result<Self, PasswordError> {
+    pub fn parse(password: &str) -> Result<Self, PasswordError> {
         if password.len() >= 8 {
             Ok(Self(String::from(password)))
         } else {

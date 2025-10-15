@@ -1,13 +1,15 @@
 use email_address::{EmailAddress, Options};
 
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Email(String);
 
+#[derive(Debug)]
 pub enum EmailError {
     Invalid,
 }
 
 impl Email {
-    fn parse(email: &str) -> Result<Self, EmailError> {
+    pub fn parse(email: &str) -> Result<Self, EmailError> {
         if let Ok(email_address) =
             EmailAddress::parse_with_options(email, Options::default().with_required_tld())
         {
