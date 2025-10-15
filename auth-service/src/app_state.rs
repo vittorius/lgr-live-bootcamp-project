@@ -1,17 +1,20 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::services::HashmapUserStore;
+use crate::domain::UserStore;
 
-pub type UserStoreType = Arc<RwLock<HashmapUserStore>>;
+pub type UserStoreType<TStore> = Arc<RwLock<TStore>>;
 
 #[derive(Clone)]
-pub struct AppState {
-    pub user_store: UserStoreType,
+pub struct AppState<TStore: UserStore> {
+    pub user_store: UserStoreType<TStore>,
 }
 
-impl AppState {
-    pub fn new(user_store: UserStoreType) -> Self {
+impl<TStore> AppState<TStore>
+where
+    TStore: UserStore,
+{
+    pub fn new(user_store: UserStoreType<TStore>) -> Self {
         Self { user_store }
     }
 }

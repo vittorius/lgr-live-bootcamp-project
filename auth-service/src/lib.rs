@@ -15,7 +15,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 
-use crate::{app_state::AppState, domain::AuthAPIError};
+use crate::{app_state::AppState, domain::{AuthAPIError, UserStore}};
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -26,7 +26,7 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(app_state: AppState<impl UserStore>, address: &str) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::signup))
