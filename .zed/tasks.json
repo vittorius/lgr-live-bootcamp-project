@@ -37,7 +37,7 @@
   },
   {
     "label": "cargo nextest $ZED_STEM (package: $ZED_CUSTOM_RUST_PACKAGE)",
-    "command": "cargo nextest run -p $ZED_CUSTOM_RUST_PACKAGE $ZED_SYMBOL",
+    "command": "cargo nextest run -p $ZED_CUSTOM_RUST_PACKAGE $ZED_STEM::$ZED_SYMBOL",
     "tags": ["rust-mod-test"]
   },
   {
