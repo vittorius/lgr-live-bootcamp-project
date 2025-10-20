@@ -1,7 +1,11 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state::{AppState, TokenStoreType}, services::{HashmapUserStore, HashsetBannedTokenStore}, utils::constants::test, Application,
+    app_state::{AppState, TokenStoreType},
+    domain::Email,
+    services::{HashmapUserStore, HashsetBannedTokenStore},
+    utils::{auth::generate_auth_cookie, constants::test},
+    Application,
 };
 use reqwest::cookie::Jar;
 use serde::Serialize;
@@ -68,6 +72,13 @@ impl TestApp {
 
     pub fn get_random_email() -> String {
         format!("{}@example.com", Uuid::new_v4())
+    }
+
+    pub fn get_valid_auth_token(email: &Email) -> String {
+        generate_auth_cookie(email)
+            .expect("Failed to generate auth cookie")
+            .value()
+            .to_string()
     }
 
     pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
