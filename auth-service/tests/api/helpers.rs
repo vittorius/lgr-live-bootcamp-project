@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use auth_service::{app_state::AppState, services::HashmapUserStore, Application};
+use auth_service::{app_state::AppState, services::HashmapUserStore, utils::constants::test, Application};
 use reqwest::cookie::Jar;
 use serde::Serialize;
 use serde_json::json;
@@ -20,7 +20,7 @@ impl TestApp {
         let user_store = HashmapUserStore::default();
         let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
 
-        let app = Application::build(app_state, "127.0.0.1:0")
+        let app = Application::build(app_state, test::APP_ADDRESS)
             .await
             .expect("Failed to build app");
         let address = format!("http://{}", app.address.clone());
