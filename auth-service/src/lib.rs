@@ -1,5 +1,5 @@
 pub mod app_state;
-mod domain;
+pub mod domain;
 pub mod routes;
 pub mod services;
 pub mod utils;
@@ -61,11 +61,13 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
             AuthAPIError::UnexpectedError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
-            },
+                        (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+                    },
             AuthAPIError::IncorrectCredentials => {
-                (StatusCode::UNAUTHORIZED, "Incorrect credentials")
-            },
+                        (StatusCode::UNAUTHORIZED, "Incorrect credentials")
+                    },
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Invalid input"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "JWT is not valid"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
