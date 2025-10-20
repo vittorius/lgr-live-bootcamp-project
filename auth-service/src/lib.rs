@@ -2,6 +2,7 @@ pub mod app_state;
 mod domain;
 pub mod routes;
 pub mod services;
+pub mod utils;
 
 use std::error::Error;
 
@@ -61,7 +62,10 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
-            }
+            },
+            AuthAPIError::IncorrectCredentials => {
+                (StatusCode::UNAUTHORIZED, "Incorrect credentials")
+            },
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

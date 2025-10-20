@@ -58,13 +58,13 @@ impl TestApp {
         format!("{}@example.com", Uuid::new_v4())
     }
 
-    pub async fn login(&self, email: &str, password: &str) -> reqwest::Response {
+    pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: Serialize,
+    {
         self.http_client
             .post(format!("{}/login", &self.address))
-            .json(&json!({
-                "email": email,
-                "password": password,
-            }))
+            .json(body)
             .send()
             .await
             .expect(FAILED_TO_EXECUTE_REQUEST)
