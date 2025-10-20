@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use auth_service::{app_state::AppState, services::HashmapUserStore, utils::constants::test, Application};
+use auth_service::{
+    app_state::AppState, services::HashmapUserStore, utils::constants::test, Application,
+};
 use reqwest::cookie::Jar;
 use serde::Serialize;
 use serde_json::json;
@@ -103,14 +105,15 @@ impl TestApp {
             .expect(FAILED_TO_EXECUTE_REQUEST)
     }
 
-    pub async fn verify_token(&self, jwt_token: &str) -> reqwest::Response {
+    pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.http_client
             .post(format!("{}/verify-token", &self.address))
-            .json(&json!({
-                "token": jwt_token,
-            }))
+            .json(body)
             .send()
             .await
-            .expect(FAILED_TO_EXECUTE_REQUEST)
+            .expect("Failed to execute request.")
     }
 }
