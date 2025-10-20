@@ -4,12 +4,12 @@ use serde::Deserialize;
 
 use crate::{
     app_state::AppState,
-    domain::{AuthAPIError, Email, Password, UserStore},
+    domain::{AuthAPIError, BannedTokenStore, Email, Password, UserStore},
     utils::auth::generate_auth_cookie,
 };
 
 pub async fn login(
-    State(state): State<AppState<impl UserStore>>,
+    State(state): State<AppState<impl UserStore, impl BannedTokenStore>>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {

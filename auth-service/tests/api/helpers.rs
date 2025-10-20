@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state::AppState, services::HashmapUserStore, utils::constants::test, Application,
+    app_state::{AppState, TokenStoreType}, services::{HashmapUserStore, HashsetBannedTokenStore}, utils::constants::test, Application,
 };
 use reqwest::cookie::Jar;
 use serde::Serialize;
@@ -13,14 +13,16 @@ pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
+    pub banned_token_store: TokenStoreType<HashsetBannedTokenStore>,
 }
 
 const FAILED_TO_EXECUTE_REQUEST: &str = "Failed to execute request";
 
 impl TestApp {
     pub async fn new() -> Self {
-        let user_store = HashmapUserStore::default();
-        let app_state = AppState::new(Arc::new(RwLock::new(user_store)));
+        let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
+        let app_state = AppState::new(user_store.clone(), banned_token_store.clone());
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -40,6 +42,7 @@ impl TestApp {
             address,
             cookie_jar,
             http_client,
+            banned_token_store: banned_token_store.clone(),
         }
     }
 

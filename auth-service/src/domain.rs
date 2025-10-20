@@ -4,7 +4,7 @@ mod error;
 mod password;
 mod user;
 
-pub(crate) use data_stores::*;
+pub use data_stores::*;
 pub use email::*;
 pub(crate) use error::*;
 pub(crate) use password::*;

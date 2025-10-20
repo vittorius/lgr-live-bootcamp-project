@@ -20,7 +20,7 @@ pub enum UserStoreError {
 }
 
 #[async_trait]
-pub trait BannedTokenStore {
+pub trait BannedTokenStore: Clone + Send + Sync + 'static {
     async fn add_token(&mut self, token: String) -> Result<(), TokenStoreError>;
     async fn token_exists(&self, token: &str) -> bool;
 }

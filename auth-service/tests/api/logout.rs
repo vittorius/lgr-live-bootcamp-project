@@ -1,6 +1,6 @@
 use crate::helpers::TestApp;
 use auth_service::{
-    domain::Email,
+    domain::{BannedTokenStore, Email},
     utils::{auth::generate_auth_cookie, constants::JWT_COOKIE_NAME},
     ErrorResponse,
 };
@@ -18,9 +18,13 @@ async fn should_return_200_if_valid_jwt_cookie() {
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
+    
+    assert!(!app.banned_token_store.read().await.token_exists(auth_cookie.value()).await);
+
     let response = app.logout().await;
 
     assert_eq!(response.status().as_u16(), 200);
+    assert!(app.banned_token_store.read().await.token_exists(auth_cookie.value()).await);
 }
 
 #[tokio::test]
@@ -36,6 +40,8 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
     );
 
     app.logout().await;
+    assert!(app.banned_token_store.read().await.token_exists(auth_cookie.value()).await);
+    
     let response = app.logout().await;
 
     assert_eq!(response.status().as_u16(), 400);

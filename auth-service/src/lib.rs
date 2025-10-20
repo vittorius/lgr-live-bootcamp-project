@@ -18,7 +18,7 @@ use tower_http::{cors::CorsLayer, services::ServeDir};
 
 use crate::{
     app_state::AppState,
-    domain::{AuthAPIError, UserStore},
+    domain::{AuthAPIError, BannedTokenStore, UserStore},
 };
 
 // This struct encapsulates our application-related logic.
@@ -31,7 +31,7 @@ pub struct Application {
 
 impl Application {
     pub async fn build(
-        app_state: AppState<impl UserStore>,
+        app_state: AppState<impl UserStore, impl BannedTokenStore>,
         address: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let allowed_origins = [
@@ -86,6 +86,7 @@ impl IntoResponse for AuthAPIError {
             }
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Invalid input"),
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "JWT is not valid"),
+            AuthAPIError::TokenAlreadyInvalidated => (StatusCode::BAD_REQUEST, "Token already invalidated"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
