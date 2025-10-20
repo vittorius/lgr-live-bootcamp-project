@@ -31,9 +31,9 @@
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "cargo nextest $ZED_CUSTOM_RUST_TEST_NAME",
-    "command": "cargo nextest run $ZED_CUSTOM_RUST_TEST_NAME",
-    "tags": ["rust-test", "rust-mod-test"]
+    "label": "cargo nextest $ZED_STEM::$ZED_CUSTOM_RUST_TEST_NAME",
+    "command": "cargo nextest run $ZED_STEM::$ZED_CUSTOM_RUST_TEST_NAME",
+    "tags": ["rust-test"]
   },
   {
     "label": "cargo nextest $ZED_STEM (package: $ZED_CUSTOM_RUST_PACKAGE)",
