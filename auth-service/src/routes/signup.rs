@@ -10,20 +10,18 @@ pub async fn signup(
     State(state): State<AppState<impl UserStore>>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    let Ok(email) = Email::parse(&request.email) else {
-        return Err(AuthAPIError::InvalidCredentials);
-    };
-    let Ok(password) = Password::parse(&request.password) else {
-        return Err(AuthAPIError::InvalidCredentials);
-    };
+    let email = Email::parse(&request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let password =
+        Password::parse(&request.password).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
     let user = User::new(email, password, request.requires_2fa);
     let mut user_store = state.user_store.write().await;
 
-    if let Err(UserStoreError::UserAlreadyExists) = user_store.add_user(user).await {
-        return Err(AuthAPIError::UserAlreadyExists);
-    }
-
+    user_store.add_user(user).await.map_err(|err| match err {
+        UserStoreError::UserAlreadyExists => AuthAPIError::UserAlreadyExists,
+        _ => AuthAPIError::UnexpectedError,
+    })?;
+    
     let response = Json(SignupResponse {
         message: "User created successfully".to_string(),
     });

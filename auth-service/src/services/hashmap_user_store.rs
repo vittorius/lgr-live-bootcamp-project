@@ -16,7 +16,6 @@ impl UserStore for HashmapUserStore {
             .map_or(Ok(()), |_| Err(UserStoreError::UserAlreadyExists))
     }
 
-    // TODO: convert from &User to User if necessary
     async fn get_user(&self, email: &Email) -> Result<&User, UserStoreError> {
         self.users.get(email).ok_or(UserStoreError::UserNotFound)
     }
