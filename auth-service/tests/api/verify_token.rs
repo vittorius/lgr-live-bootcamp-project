@@ -1,4 +1,8 @@
-use auth_service::domain::{BannedTokenStore, Email};
+use auth_service::{
+    domain::{BannedTokenStore, Email},
+    utils::constants::JWT_COOKIE_NAME,
+    ErrorResponse,
+};
 use serde_json::json;
 
 use crate::helpers::TestApp;
@@ -16,11 +20,41 @@ async fn should_return_422_if_malformed_input() {
 async fn should_return_200_valid_token() {
     let app = TestApp::new().await;
 
-    let email = Email::parse(&TestApp::get_random_email()).expect("Failed to parse email");
+    let random_email = TestApp::get_random_email();
 
-    let response = app
-        .post_verify_token(&json!({ "token": TestApp::get_valid_auth_token(&email) }))
-        .await;
+    let signup_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": false
+    });
+
+    let response = app.post_signup(&signup_body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    let login_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+    });
+
+    let response = app.post_login(&login_body).await;
+
+    assert_eq!(response.status().as_u16(), 200);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(!auth_cookie.value().is_empty());
+
+    let token = auth_cookie.value();
+
+    let verify_token_body = serde_json::json!({
+        "token": &token,
+    });
+
+    let response = app.post_verify_token(&verify_token_body).await;
 
     assert_eq!(response.status().as_u16(), 200);
 }
@@ -36,28 +70,70 @@ async fn should_return_401_if_invalid_token() {
         .await;
 
     assert_eq!(response.status().as_u16(), 401);
+    assert_eq!(
+        response
+            .json::<ErrorResponse>()
+            .await
+            .expect("Could not deserialize response body to ErrorResponse")
+            .error,
+        "Invalid auth token".to_owned()
+    );
 }
 
 #[tokio::test]
 async fn should_return_401_if_banned_token() {
     let app = TestApp::new().await;
-    let token = TestApp::get_valid_auth_token(
-        &Email::parse(&TestApp::get_random_email()).expect("Failed to parse email"),
-    );
 
-    let response = app
-        .post_verify_token(&json!({
-            "token": token
-        }))
-        .await;
+    let random_email = TestApp::get_random_email();
+
+    let signup_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": false
+    });
+
+    let response = app.post_signup(&signup_body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    let login_body = serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+    });
+
+    let response = app.post_login(&login_body).await;
+
     assert_eq!(response.status().as_u16(), 200);
-    
-    app.banned_token_store.write().await.add_token(token.clone()).await.expect("Failed to ban token");
-    
-    let response = app
-        .post_verify_token(&json!({
-            "token": token
-        }))
-        .await;
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(!auth_cookie.value().is_empty());
+
+    let token = auth_cookie.value();
+
+    let response = app.post_logout().await;
+
+    assert_eq!(response.status().as_u16(), 200);
+
+    // ---------------------------------------------------------
+
+    let verify_token_body = serde_json::json!({
+        "token": token,
+    });
+
+    let response = app.post_verify_token(&verify_token_body).await;
+
     assert_eq!(response.status().as_u16(), 401);
+
+    assert_eq!(
+        response
+            .json::<ErrorResponse>()
+            .await
+            .expect("Could not deserialize response body to ErrorResponse")
+            .error,
+        "Invalid auth token".to_owned()
+    );
 }

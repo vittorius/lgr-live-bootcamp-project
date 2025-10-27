@@ -84,8 +84,8 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::IncorrectCredentials => {
                 (StatusCode::UNAUTHORIZED, "Incorrect credentials")
             }
-            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Invalid input"),
-            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "JWT is not valid"),
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing auth token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid auth token"),
             AuthAPIError::TokenAlreadyInvalidated => (StatusCode::BAD_REQUEST, "Token already invalidated"),
         };
         let body = Json(ErrorResponse {

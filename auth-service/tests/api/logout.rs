@@ -18,13 +18,30 @@ async fn should_return_200_if_valid_jwt_cookie() {
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
-    
-    assert!(!app.banned_token_store.read().await.token_exists(auth_cookie.value()).await);
+    assert!(
+        !app.banned_token_store
+            .read()
+            .await
+            .token_exists(auth_cookie.value())
+            .await
+    );
 
-    let response = app.logout().await;
+    let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 200);
-    assert!(app.banned_token_store.read().await.token_exists(auth_cookie.value()).await);
+    assert!(
+        app.banned_token_store
+            .read()
+            .await
+            .token_exists(auth_cookie.value())
+            .await
+    );
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(auth_cookie.value().is_empty());
 }
 
 #[tokio::test]
@@ -39,10 +56,25 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
-    app.logout().await;
-    assert!(app.banned_token_store.read().await.token_exists(auth_cookie.value()).await);
+    let response = app.post_logout().await;
+
+    assert_eq!(response.status().as_u16(), 200);
+
+    assert!(
+        app.banned_token_store
+            .read()
+            .await
+            .token_exists(auth_cookie.value())
+            .await
+    );
     
-    let response = app.logout().await;
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+    assert!(auth_cookie.value().is_empty());
+
+    let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 400);
 }
@@ -51,16 +83,22 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
 async fn should_return_400_if_jwt_cookie_missing() {
     let app = TestApp::new().await;
 
-    let response = app.logout().await;
+    let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 400);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
+    assert!(auth_cookie.is_none());
+
     assert_eq!(
         response
             .json::<ErrorResponse>()
             .await
             .expect("Could not deserialize response body to ErrorResponse")
             .error,
-        "Invalid input".to_owned()
+        "Missing auth token".to_owned()
     );
 }
 
@@ -77,7 +115,13 @@ async fn should_return_401_if_invalid_token() {
         &Url::parse("http://127.0.0.1").expect("Failed to parse URL"),
     );
 
-    let response = app.logout().await;
+    let response = app.post_logout().await;
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME);
+
+    assert!(auth_cookie.is_none());
 
     assert_eq!(response.status().as_u16(), 401);
     assert_eq!(
@@ -86,6 +130,6 @@ async fn should_return_401_if_invalid_token() {
             .await
             .expect("Could not deserialize response body to ErrorResponse")
             .error,
-        "JWT is not valid".to_owned()
+        "Invalid auth token".to_owned()
     );
 }
