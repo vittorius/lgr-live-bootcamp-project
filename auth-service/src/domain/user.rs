@@ -6,7 +6,7 @@ use crate::domain::{email::Email, password::Password};
 pub struct User {
     pub(crate) email: Email,
     pub(crate) password: Password,
-    requires_2fa: bool,
+    pub(crate) requires_2fa: bool,
 }
 
 impl User {
