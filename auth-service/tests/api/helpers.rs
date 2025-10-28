@@ -3,7 +3,7 @@ use std::sync::Arc;
 use auth_service::{
     app_state::{AppState, TokenStoreType},
     domain::Email,
-    services::{HashmapUserStore, HashsetBannedTokenStore},
+    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore},
     utils::{auth::generate_auth_cookie, constants::test},
     Application,
 };
@@ -18,6 +18,7 @@ pub struct TestApp {
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
     pub banned_token_store: TokenStoreType<HashsetBannedTokenStore>,
+    pub two_fa_code_store: TokenStoreType<HashmapTwoFACodeStore>,
 }
 
 const FAILED_TO_EXECUTE_REQUEST: &str = "Failed to execute request";
@@ -26,7 +27,12 @@ impl TestApp {
     pub async fn new() -> Self {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
-        let app_state = AppState::new(user_store.clone(), banned_token_store.clone());
+        let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+        let app_state = AppState::new(
+            user_store.clone(),
+            banned_token_store.clone(),
+            two_fa_code_store.clone(),
+        );
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -47,6 +53,7 @@ impl TestApp {
             cookie_jar,
             http_client,
             banned_token_store: banned_token_store.clone(),
+            two_fa_code_store: two_fa_code_store.clone(),
         }
     }
 
@@ -74,6 +81,7 @@ impl TestApp {
         format!("{}@example.com", Uuid::new_v4())
     }
 
+    #[allow(dead_code)]
     pub fn get_valid_auth_token(email: &Email) -> String {
         generate_auth_cookie(email)
             .expect("Failed to generate auth cookie")

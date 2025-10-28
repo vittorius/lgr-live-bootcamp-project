@@ -1,5 +1,4 @@
 use auth_service::{
-    domain::{BannedTokenStore, Email},
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };

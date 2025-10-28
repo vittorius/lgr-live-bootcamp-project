@@ -4,12 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     app_state::AppState,
-    domain::{AuthAPIError, BannedTokenStore, Email, Password, UserStore},
+    domain::{
+        AuthAPIError, BannedTokenStore, Email, LoginAttemptId, Password, TwoFACode, TwoFACodeStore,
+        UserStore,
+    },
     utils::auth::generate_auth_cookie,
 };
 
 pub async fn login(
-    State(state): State<AppState<impl UserStore, impl BannedTokenStore>>,
+    State(state): State<AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore>>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(StatusCode, CookieJar, impl IntoResponse), AuthAPIError> {
@@ -30,21 +33,35 @@ pub async fn login(
         .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
     match user.requires_2fa {
-        true => handle_2fa(jar).await,
+        true => handle_2fa(&email, &state, jar).await,
         false => handle_no_2fa(&user.email, jar).await,
     }
 }
 
 async fn handle_2fa(
+    email: &Email,
+    state: &AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore>,
     jar: CookieJar,
 ) -> Result<(StatusCode, CookieJar, Json<LoginResponse>), AuthAPIError> {
+    let login_attempt_id = LoginAttemptId::default();
+    let two_fa_code = TwoFACode::default();
+
+    state
+        .two_fa_code_store
+        .write()
+        .await
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
+        .await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
+
     Ok((
         StatusCode::PARTIAL_CONTENT,
         jar,
         LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
             message: "2FA required".to_owned(),
-            login_attempt_id: "123456".to_owned(),
-        }).into(),
+            login_attempt_id: login_attempt_id.as_ref().to_owned(),
+        })
+        .into(),
     ))
 }
 

@@ -1,5 +1,6 @@
 use auth_service::{
-    routes::{LoginResponse, TwoFactorAuthResponse},
+    domain::{Email, LoginAttemptId, TwoFACodeStore},
+    routes::TwoFactorAuthResponse,
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };
@@ -171,15 +172,21 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let response = app.post_login(&login_body).await;
 
     assert_eq!(response.status().as_u16(), 206);
-    assert_eq!(
-        response
-            .json::<TwoFactorAuthResponse>()
-            .await
-            .expect("Could not deserialize response body to ErrorResponse"),
-        TwoFactorAuthResponse {
-            message: "2FA required".to_owned(),
-            login_attempt_id: "123456".to_owned()
-        }
-    );
 
+    let json_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to ErrorResponse");
+
+    assert_eq!(json_body.message, "2FA required".to_owned());
+    assert_eq!(
+        app.two_fa_code_store
+            .read()
+            .await
+            .get_code(&Email::parse(&random_email).expect("Must be valid email"))
+            .await
+            .expect("Login attempt ID must be present in store")
+            .0,
+        LoginAttemptId::parse(json_body.login_attempt_id).expect("Must be valid")
+    );
 }
