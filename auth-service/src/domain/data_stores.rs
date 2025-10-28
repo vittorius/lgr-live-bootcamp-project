@@ -58,6 +58,7 @@ pub enum TwoFACodeStoreError {
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
+    // TODO: add unit tests later
     pub fn parse(id: String) -> Result<Self, String> {
         Uuid::parse_str(&id)
             .map(|_| Self(id))
@@ -81,6 +82,7 @@ impl AsRef<str> for LoginAttemptId {
 pub struct TwoFACode(String);
 
 impl TwoFACode {
+    // TODO: add unit tests later
     pub fn parse(code: String) -> Result<Self, String> {
         if code.len() != 6 || !code.chars().all(|c| c.is_ascii_digit()) {
             Err("Invalid 2FA code".to_owned())
@@ -93,8 +95,10 @@ impl TwoFACode {
 impl Default for TwoFACode {
     fn default() -> Self {
         let mut rng = rand::thread_rng();
-        let mut code = String::default();
-        (0..6).for_each(|_| code.push(rng.gen_range(0..10).into()));
+        let mut code = String::new();
+        for _ in 0..6 {
+            code.push_str(&rng.gen_range(0..10).to_string());
+        }
         Self(code)
     }
 }
@@ -102,5 +106,19 @@ impl Default for TwoFACode {
 impl AsRef<str> for TwoFACode {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_two_fa_code_is_valid() {
+        for _ in 0..100 {
+            let code = TwoFACode::default();
+            assert_eq!(code.0.len(), 6);
+            assert!(code.0.chars().all(|c| c.is_ascii_digit()));
+        }
     }
 }
