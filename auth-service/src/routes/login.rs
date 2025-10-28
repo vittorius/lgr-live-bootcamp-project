@@ -5,14 +5,13 @@ use serde::{Deserialize, Serialize};
 use crate::{
     app_state::AppState,
     domain::{
-        AuthAPIError, BannedTokenStore, Email, LoginAttemptId, Password, TwoFACode, TwoFACodeStore,
-        UserStore,
+        AuthAPIError, BannedTokenStore, Email, EmailClient, LoginAttemptId, Password, TwoFACode, TwoFACodeStore, UserStore
     },
     utils::auth::generate_auth_cookie,
 };
 
 pub async fn login(
-    State(state): State<AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore>>,
+    State(state): State<AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore, impl EmailClient>>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(StatusCode, CookieJar, impl IntoResponse), AuthAPIError> {
@@ -40,7 +39,7 @@ pub async fn login(
 
 async fn handle_2fa(
     email: &Email,
-    state: &AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore>,
+    state: &AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore, impl EmailClient>,
     jar: CookieJar,
 ) -> Result<(StatusCode, CookieJar, Json<LoginResponse>), AuthAPIError> {
     let login_attempt_id = LoginAttemptId::default();

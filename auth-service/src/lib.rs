@@ -18,9 +18,8 @@ use tower_http::{cors::CorsLayer, services::ServeDir};
 
 use crate::{
     app_state::AppState,
-    domain::{AuthAPIError, BannedTokenStore, TwoFACodeStore, UserStore},
+    domain::{AuthAPIError, BannedTokenStore, EmailClient, TwoFACodeStore, UserStore},
 };
-
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -32,7 +31,12 @@ pub struct Application {
 
 impl Application {
     pub async fn build(
-        app_state: AppState<impl UserStore, impl BannedTokenStore, impl TwoFACodeStore>,
+        app_state: AppState<
+            impl UserStore,
+            impl BannedTokenStore,
+            impl TwoFACodeStore,
+            impl EmailClient,
+        >,
         address: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let allowed_origins = [
