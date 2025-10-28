@@ -1,6 +1,6 @@
 use crate::helpers::TestApp;
 use auth_service::{
-    domain::{BannedTokenStore, Email},
+    domain::Email,
     utils::{auth::generate_auth_cookie, constants::JWT_COOKIE_NAME},
     ErrorResponse,
 };
@@ -67,7 +67,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
             .token_exists(auth_cookie.value())
             .await
     );
-    
+
     let auth_cookie = response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)

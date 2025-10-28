@@ -68,7 +68,7 @@ fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
 // Check if JWT auth token is valid by decoding it using the JWT secret
 pub async fn validate_token(
     token: &str,
-    banned_tokens: &impl BannedTokenStore,
+    banned_tokens: &dyn BannedTokenStore,
 ) -> Result<Claims, ValidateTokenError> {
     if banned_tokens.token_exists(token).await {
         return Err(ValidateTokenError::Banned);
@@ -137,8 +137,8 @@ mod tests {
     async fn test_validate_token_with_valid_token() {
         let email = Email::parse("test@example.com").unwrap();
         let token = generate_auth_token(&email).unwrap();
-        let banned_tokens = HashsetBannedTokenStore::default();
-        let result = validate_token(&token, &banned_tokens).await.unwrap();
+        let banned_tokens: &dyn BannedTokenStore = &HashsetBannedTokenStore::default();
+        let result = validate_token(&token, banned_tokens).await.unwrap();
         assert_eq!(result.sub, "test@example.com");
 
         let exp = Utc::now()
@@ -153,11 +153,12 @@ mod tests {
     async fn test_validate_token_with_valid_but_banned_token() {
         let email = Email::parse("test@example.com").unwrap();
         let token = generate_auth_token(&email).unwrap();
-        let mut banned_tokens = HashsetBannedTokenStore::default();
-        banned_tokens.add_token(token.clone()).await.unwrap();
-        assert!(
-            validate_token(&token, &banned_tokens).await.is_err()
-        );
+        let banned_tokens: &mut dyn BannedTokenStore = &mut HashsetBannedTokenStore::default();
+        banned_tokens
+            .add_token(token.clone())
+            .await
+            .expect("Must have added a token");
+        assert!(validate_token(&token, banned_tokens).await.is_err());
     }
 
     #[tokio::test]

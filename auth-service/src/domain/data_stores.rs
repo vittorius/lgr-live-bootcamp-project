@@ -6,7 +6,7 @@ use rand::Rng;
 use uuid::Uuid;
 
 #[async_trait]
-pub trait UserStore: Clone + Send + Sync + 'static {
+pub trait UserStore: Send + Sync + 'static {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError>;
     async fn get_user(&self, email: &Email) -> Result<&User, UserStoreError>;
     async fn validate_user(&self, email: &Email, password: &Password)
@@ -22,7 +22,7 @@ pub enum UserStoreError {
 }
 
 #[async_trait]
-pub trait BannedTokenStore: Clone + Send + Sync + 'static {
+pub trait BannedTokenStore: Send + Sync + 'static {
     async fn add_token(&mut self, token: String) -> Result<(), TokenStoreError>;
     async fn token_exists(&self, token: &str) -> bool;
 }
@@ -34,7 +34,7 @@ pub enum TokenStoreError {
 
 // This trait represents the interface all concrete 2FA code stores should implement
 #[async_trait::async_trait]
-pub trait TwoFACodeStore: Clone + Send + Sync + 'static {
+pub trait TwoFACodeStore: Send + Sync + 'static {
     async fn add_code(
         &mut self,
         email: Email,

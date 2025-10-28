@@ -1,11 +1,7 @@
 use std::sync::Arc;
 
 use auth_service::{
-    app_state::{AppState, TokenStoreType},
-    domain::Email,
-    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
-    utils::{auth::generate_auth_cookie, constants::test},
-    Application,
+    Application, app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, domain::Email, services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient}, utils::{auth::generate_auth_cookie, constants::test}
 };
 use reqwest::cookie::Jar;
 use serde::Serialize;
@@ -17,8 +13,8 @@ pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
-    pub banned_token_store: TokenStoreType<HashsetBannedTokenStore>,
-    pub two_fa_code_store: TokenStoreType<HashmapTwoFACodeStore>,
+    pub banned_token_store: BannedTokenStoreType,
+    pub two_fa_code_store: TwoFACodeStoreType,
 }
 
 const FAILED_TO_EXECUTE_REQUEST: &str = "Failed to execute request";

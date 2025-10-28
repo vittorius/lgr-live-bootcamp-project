@@ -1,5 +1,5 @@
 use auth_service::{
-    domain::{Email, LoginAttemptId, TwoFACodeStore},
+    domain::{Email, LoginAttemptId},
     routes::TwoFactorAuthResponse,
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
