@@ -1,10 +1,59 @@
 use crate::helpers::TestApp;
 use auth_service::{
     domain::Email,
-    routes::{LoginResponse, SignupResponse, TwoFactorAuthResponse, Verify2FARequest},
+    routes::{LoginResponse, SignupResponse, TwoFactorAuthResponse},
+    utils::constants::JWT_COOKIE_NAME,
 };
 use serde_json::json;
 use uuid::Uuid;
+
+#[tokio::test]
+async fn should_return_200_if_correct_code() {
+    let app = TestApp::new().await;
+    let email = TestApp::get_random_email();
+    let email_value = Email::parse(&email).expect("Must be valid email");
+
+    let signup_body = serde_json::json!({
+        "email": email,
+        "password": "password123",
+        "requires2FA": true
+    });
+
+    let response = app.post_signup(&signup_body).await;
+    assert_eq!(response.status().as_u16(), 201);
+
+    let login_body = serde_json::json!({
+        "email": email,
+        "password": "password123",
+    });
+
+    let TwoFactorAuthResponse {
+        login_attempt_id, ..
+    } = app
+        .post_login(&login_body)
+        .await
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Must deserialize to TwoFactorAuthResponse");
+
+    let (_, two_fa_code) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(&email_value)
+        .await
+        .expect("2FA code must be present for email");
+
+    let response = app.post_verify_2fa(&json!({ "email": email, "loginAttemptId": login_attempt_id, "2FACode": two_fa_code.as_ref() })).await;
+    assert_eq!(response.status(), 200);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(!auth_cookie.value().is_empty());
+}
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
@@ -56,20 +105,14 @@ async fn should_return_401_if_incorrect_credentials() {
     .await
     .expect("Must deserialize to SignupResponse");
 
-    let login_response = app
+    let TwoFactorAuthResponse {
+        login_attempt_id, ..
+    } = app
         .post_login(&json!({"email": email, "password": password }))
         .await
-        .json::<LoginResponse>()
+        .json::<TwoFactorAuthResponse>()
         .await
         .expect("Must deserialize to LoginResponse");
-
-    // could be retrieved from the 2FA code store but I wanted to play with the pattern-matching :)
-    let LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
-        login_attempt_id, ..
-    }) = login_response
-    else {
-        panic!("Must have returned 2FA login response")
-    };
 
     let (_, two_fa_code) = app
         .two_fa_code_store

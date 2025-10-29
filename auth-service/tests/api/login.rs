@@ -176,7 +176,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let json_body = response
         .json::<TwoFactorAuthResponse>()
         .await
-        .expect("Could not deserialize response body to ErrorResponse");
+        .expect("Must deserialize to TwoFactorAuthResponse");
 
     assert_eq!(json_body.message, "2FA required".to_owned());
     assert_eq!(
