@@ -8,7 +8,7 @@ use crate::{
     utils::auth::generate_auth_cookie,
 };
 
-pub async fn login(
+pub async fn post_login(
     State(state): State<AppState>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,

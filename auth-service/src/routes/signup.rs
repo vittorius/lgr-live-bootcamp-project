@@ -6,7 +6,7 @@ use crate::{
     domain::{AuthAPIError, Email, Password, User, UserStoreError},
 };
 
-pub async fn signup(
+pub async fn post_signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
