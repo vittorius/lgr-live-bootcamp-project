@@ -19,7 +19,7 @@ pub async fn post_verify_2fa(
     let two_fa_code =
         TwoFACode::parse(request.two_fa_code).map_err(|_| AuthAPIError::InvalidCredentials)?; // Validate the 2FA code in `request`
 
-    let two_fa_code_store = state.two_fa_code_store.write().await;
+    let mut two_fa_code_store = state.two_fa_code_store.write().await;
     let code_tuple = two_fa_code_store
         .get_code(&email)
         .await
@@ -28,10 +28,12 @@ pub async fn post_verify_2fa(
     if !(code_tuple.0 == login_attempt_id && code_tuple.1 == two_fa_code) {
         return Err(AuthAPIError::IncorrectCredentials);
     }
+    
+    two_fa_code_store.remove_code(&email).await.map_err(|_| AuthAPIError::UnexpectedError)?;
 
     let auth_cookie = generate_auth_cookie(&email).map_err(|_| AuthAPIError::UnexpectedError)?;
     let updated_jar = jar.add(auth_cookie);
-
+    
     Ok((StatusCode::OK, updated_jar))
 }
 

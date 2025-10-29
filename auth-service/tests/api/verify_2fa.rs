@@ -137,7 +137,7 @@ async fn should_return_401_if_incorrect_credentials() {
 
 #[tokio::test]
 async fn should_return_401_if_old_code() {
-    // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail.
+    // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login request. This should fail.
 
     let app = TestApp::new().await;
     let email = TestApp::get_random_email();
@@ -175,7 +175,6 @@ async fn should_return_401_if_old_code() {
         .await
         .expect("Must deserialize to LoginResponse");
 
-    let app = TestApp::new().await;
     let response = app
         .post_verify_2fa(&json!({
             "email": email,
@@ -183,5 +182,51 @@ async fn should_return_401_if_old_code() {
             "2FACode":two_fa_code.as_ref()
         }))
         .await;
+    assert_eq!(response.status(), 401);
+}
+
+#[tokio::test]
+async fn should_return_401_if_same_code_twice() {
+    // Verify twice with the same 2FA code. This should fail.
+
+    let app = TestApp::new().await;
+    let email = TestApp::get_random_email();
+    let email_value = Email::parse(&email).unwrap();
+    let password = "password".to_owned();
+
+    app.post_signup(&json!({
+        "email": email,
+        "password": password,
+        "requires2FA": true
+    }))
+    .await
+    .json::<SignupResponse>()
+    .await
+    .expect("Must deserialize to SignupResponse");
+
+    app.post_login(&json!({"email": email, "password": password }))
+        .await
+        .json::<LoginResponse>()
+        .await
+        .expect("Must deserialize to LoginResponse");
+
+    let (login_attempt_id, two_fa_code) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(&email_value)
+        .await
+        .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
+
+    let body = &json!({
+        "email": email,
+        "loginAttemptId": login_attempt_id.as_ref(),
+        "2FACode":two_fa_code.as_ref()
+    });
+
+    let response = app.post_verify_2fa(body).await;
+    assert_eq!(response.status(), 200);
+
+    let response = app.post_verify_2fa(body).await;
     assert_eq!(response.status(), 401);
 }
