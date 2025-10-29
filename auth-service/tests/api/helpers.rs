@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
 use auth_service::{
-    Application, app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, domain::Email, services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient}, utils::{auth::generate_auth_cookie, constants::test}
+    app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
+    domain::Email,
+    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
+    utils::{auth::generate_auth_cookie, constants::test},
+    Application,
 };
 use reqwest::cookie::Jar;
 use serde::Serialize;
-use serde_json::json;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
@@ -100,19 +103,13 @@ impl TestApp {
             .expect(FAILED_TO_EXECUTE_REQUEST)
     }
 
-    pub async fn verify_2fa(
-        &self,
-        email: &str,
-        login_attempt_id: &str,
-        code_2fa: &str,
-    ) -> reqwest::Response {
+    pub async fn post_verify_2fa<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: Serialize,
+    {
         self.http_client
             .post(format!("{}/verify-2fa", &self.address))
-            .json(&json!({
-                "email": email,
-                "loginAttemptId": login_attempt_id,
-                "2FACode": code_2fa,
-            }))
+            .json(body)
             .send()
             .await
             .expect(FAILED_TO_EXECUTE_REQUEST)
