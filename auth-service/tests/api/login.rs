@@ -1,8 +1,5 @@
 use auth_service::{
-    domain::{Email, LoginAttemptId},
-    routes::TwoFactorAuthResponse,
-    utils::constants::JWT_COOKIE_NAME,
-    ErrorResponse,
+    domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
 use serde_json::json;
 
@@ -186,7 +183,8 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
             .get_code(&Email::parse(&random_email).expect("Must be valid email"))
             .await
             .expect("Login attempt ID must be present in store")
-            .0,
-        LoginAttemptId::parse(json_body.login_attempt_id).expect("Must be valid")
+            .0
+            .as_ref(),
+        json_body.login_attempt_id
     );
 }

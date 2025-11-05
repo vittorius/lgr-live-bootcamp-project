@@ -16,10 +16,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tower_http::{cors::CorsLayer, services::ServeDir};
 
-use crate::{
-    app_state::AppState,
-    domain::AuthAPIError,
-};
+use crate::{app_state::AppState, domain::AuthAPIError};
 
 // This struct encapsulates our application-related logic.
 pub struct Application {

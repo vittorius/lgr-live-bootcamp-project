@@ -1,8 +1,9 @@
 use crate::helpers::TestApp;
 use auth_service::{
     domain::Email,
-    routes::{LoginResponse, SignupResponse, TwoFactorAuthResponse},
+    routes::{SignupResponse, TwoFactorAuthResponse},
     utils::constants::JWT_COOKIE_NAME,
+    ErrorResponse,
 };
 use serde_json::json;
 use uuid::Uuid;
@@ -64,12 +65,14 @@ async fn should_return_422_if_malformed_input() {
         json!({"loginAttemptId": "12345678-1234-1234-1234-123456789012", "2FACode": "123456"}),
         json!({"email": "me@example.com", "2FACode": "123456"}),
         json!({"email": "me@example.com", "loginAttemptId": "12345678-1234-1234-1234-123456789012"}),
+        json!({}),
     ];
 
     for test_case in test_cases {
         let app = TestApp::new().await;
         let response = app.post_verify_2fa(&test_case).await;
-        assert_eq!(response.status(), 422);
+
+        assert_eq!(response.status(), 422, "Failed for input: {:?}", test_case);
     }
 }
 
@@ -79,12 +82,23 @@ async fn should_return_400_if_invalid_input() {
         json!({"email": "invalid-email", "loginAttemptId": "12345678-1234-1234-1234-123456789012", "2FACode": "123456"}),
         json!({"email": "me@example.com", "loginAttemptId": "invalid-uuid", "2FACode": "123456"}),
         json!({"email": "me@example.com", "loginAttemptId": "12345678-1234-1234-1234-123456789012", "2FACode": "invalid-code"}),
+        json!({"email": "", "loginAttemptId": "", "2FACode": ""}),
     ];
 
     for test_case in test_cases {
         let app = TestApp::new().await;
         let response = app.post_verify_2fa(&test_case).await;
+
         assert_eq!(response.status(), 400);
+
+        assert_eq!(
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("Could not deserialize response body to ErrorResponse")
+                .error,
+            "Invalid credentials".to_owned()
+        );
     }
 }
 
@@ -95,6 +109,7 @@ async fn should_return_401_if_incorrect_credentials() {
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();
 
+    // not checking the response status because we explicitly deserialize the response body to SignupResponse
     app.post_signup(&json!({
         "email": email,
         "password": password,
@@ -105,60 +120,15 @@ async fn should_return_401_if_incorrect_credentials() {
     .await
     .expect("Must deserialize to SignupResponse");
 
-    let TwoFactorAuthResponse {
-        login_attempt_id, ..
-    } = app
+    let response_body = app
         .post_login(&json!({"email": email, "password": password }))
         .await
         .json::<TwoFactorAuthResponse>()
         .await
         .expect("Must deserialize to LoginResponse");
 
-    let (_, two_fa_code) = app
-        .two_fa_code_store
-        .read()
-        .await
-        .get_code(&email_value)
-        .await
-        .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
-
-    let test_cases = [
-        json!({"email": "missing@example.com", "loginAttemptId": login_attempt_id, "2FACode": two_fa_code.as_ref()}),
-        json!({"email": email, "loginAttemptId": login_attempt_id, "2FACode":  two_fa_code.as_ref().chars().rev().collect::<String>()}),
-        json!({"email": email, "loginAttemptId": Uuid::new_v4(), "2FACode": two_fa_code.as_ref()}),
-    ];
-
-    for test_case in test_cases {
-        let app = TestApp::new().await;
-        let response = app.post_verify_2fa(&test_case).await;
-        assert_eq!(response.status(), 401);
-    }
-}
-
-#[tokio::test]
-async fn should_return_401_if_old_code() {
-    // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login request. This should fail.
-
-    let app = TestApp::new().await;
-    let email = TestApp::get_random_email();
-    let email_value = Email::parse(&email).unwrap();
-    let password = "password".to_owned();
-
-    app.post_signup(&json!({
-        "email": email,
-        "password": password,
-        "requires2FA": true
-    }))
-    .await
-    .json::<SignupResponse>()
-    .await
-    .expect("Must deserialize to SignupResponse");
-
-    app.post_login(&json!({"email": email, "password": password }))
-        .await
-        .json::<LoginResponse>()
-        .await
-        .expect("Must deserialize to LoginResponse");
+    assert_eq!(response_body.message, "2FA required".to_owned());
+    assert!(!response_body.login_attempt_id.is_empty());
 
     let (login_attempt_id, two_fa_code) = app
         .two_fa_code_store
@@ -168,20 +138,88 @@ async fn should_return_401_if_old_code() {
         .await
         .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
 
-    // second login to invalidate the 1st login 2FA code
-    app.post_login(&json!({"email": email, "password": password }))
+    assert_eq!(response_body.login_attempt_id, login_attempt_id.as_ref());
+
+    let two_fa_code = two_fa_code.as_ref();
+
+    let test_cases = [
+        json!({"email": "missing@example.com", "loginAttemptId": login_attempt_id.as_ref(), "2FACode": two_fa_code}),
+        json!({"email": email, "loginAttemptId": login_attempt_id.as_ref(), "2FACode":  two_fa_code.chars().rev().collect::<String>()}),
+        json!({"email": email, "loginAttemptId": Uuid::new_v4(), "2FACode": two_fa_code}),
+    ];
+
+    for test_case in test_cases {
+        let app = TestApp::new().await;
+        let response = app.post_verify_2fa(&test_case).await;
+
+        assert_eq!(response.status(), 401, "Failed for input: {:?}", test_case);
+        assert_eq!(
+            response
+                .json::<ErrorResponse>()
+                .await
+                .expect("Could not deserialize response body to ErrorResponse")
+                .error,
+            "Incorrect credentials".to_owned()
+        );
+    }
+}
+
+#[tokio::test]
+async fn should_return_401_if_old_code() {
+    let app = TestApp::new().await;
+    let email = TestApp::get_random_email();
+    let email_value = Email::parse(&email).unwrap();
+    let password = "password".to_owned();
+
+    // not checking the status code because we explicitly deserialize the response body into SignupResponse
+    app.post_signup(&json!({
+        "email": email,
+        "password": password,
+        "requires2FA": true
+    }))
+    .await
+    .json::<SignupResponse>()
+    .await
+    .expect("Must deserialize to SignupResponse");
+
+    let login_body = json!({
+        "email": email,
+        "password": password
+    });
+
+    // first login call
+    let response_body = app
+        .post_login(&login_body)
         .await
-        .json::<LoginResponse>()
+        .json::<TwoFactorAuthResponse>()
         .await
         .expect("Must deserialize to LoginResponse");
+
+    assert_eq!(response_body.message, "2FA required".to_owned());
+    assert!(!response_body.login_attempt_id.is_empty());
+
+    let (login_attempt_id, two_fa_code) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(&email_value)
+        .await
+        .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
+
+    assert_eq!(response_body.login_attempt_id, login_attempt_id.as_ref());
+
+    // second login to invalidate the 1st login 2FA code
+    let response = app.post_login(&login_body).await;
+    assert_eq!(response.status(), 206);
 
     let response = app
         .post_verify_2fa(&json!({
             "email": email,
             "loginAttemptId": login_attempt_id.as_ref(),
-            "2FACode":two_fa_code.as_ref()
+            "2FACode": two_fa_code.as_ref()
         }))
         .await;
+
     assert_eq!(response.status(), 401);
 }
 
@@ -204,11 +242,15 @@ async fn should_return_401_if_same_code_twice() {
     .await
     .expect("Must deserialize to SignupResponse");
 
-    app.post_login(&json!({"email": email, "password": password }))
+    let response_body = app
+        .post_login(&json!({"email": email, "password": password }))
         .await
-        .json::<LoginResponse>()
+        .json::<TwoFactorAuthResponse>()
         .await
         .expect("Must deserialize to LoginResponse");
+
+    assert_eq!(response_body.message, "2FA required".to_owned());
+    assert!(!response_body.login_attempt_id.is_empty());
 
     let (login_attempt_id, two_fa_code) = app
         .two_fa_code_store
@@ -217,6 +259,7 @@ async fn should_return_401_if_same_code_twice() {
         .get_code(&email_value)
         .await
         .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
+    assert_eq!(response_body.login_attempt_id, login_attempt_id.as_ref());
 
     let body = &json!({
         "email": email,
@@ -226,6 +269,13 @@ async fn should_return_401_if_same_code_twice() {
 
     let response = app.post_verify_2fa(body).await;
     assert_eq!(response.status(), 200);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(!auth_cookie.value().is_empty());
 
     let response = app.post_verify_2fa(body).await;
     assert_eq!(response.status(), 401);

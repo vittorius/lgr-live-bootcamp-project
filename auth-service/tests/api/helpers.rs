@@ -33,7 +33,7 @@ impl TestApp {
             user_store.clone(),
             banned_token_store.clone(),
             two_fa_code_store.clone(),
-            email_client.clone(),
+            email_client,
         );
 
         let app = Application::build(app_state, test::APP_ADDRESS)
@@ -54,8 +54,8 @@ impl TestApp {
             address,
             cookie_jar,
             http_client,
-            banned_token_store: banned_token_store.clone(),
-            two_fa_code_store: two_fa_code_store.clone(),
+            banned_token_store,
+            two_fa_code_store,
         }
     }
 

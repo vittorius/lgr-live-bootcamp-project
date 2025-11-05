@@ -1,7 +1,4 @@
-use auth_service::{
-    utils::constants::JWT_COOKIE_NAME,
-    ErrorResponse,
-};
+use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 use serde_json::json;
 
 use crate::helpers::TestApp;

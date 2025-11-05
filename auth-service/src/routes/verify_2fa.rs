@@ -28,12 +28,15 @@ pub async fn post_verify_2fa(
     if !(code_tuple.0 == login_attempt_id && code_tuple.1 == two_fa_code) {
         return Err(AuthAPIError::IncorrectCredentials);
     }
-    
-    two_fa_code_store.remove_code(&email).await.map_err(|_| AuthAPIError::UnexpectedError)?;
+
+    two_fa_code_store
+        .remove_code(&email)
+        .await
+        .map_err(|_| AuthAPIError::UnexpectedError)?;
 
     let auth_cookie = generate_auth_cookie(&email).map_err(|_| AuthAPIError::UnexpectedError)?;
     let updated_jar = jar.add(auth_cookie);
-    
+
     Ok((StatusCode::OK, updated_jar))
 }
 
