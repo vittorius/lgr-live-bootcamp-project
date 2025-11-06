@@ -3,7 +3,8 @@ use std::sync::Arc;
 use auth_service::{
     app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
     domain::Email,
-    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
+    services::data_stores::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore},
+    services::MockEmailClient,
     utils::{auth::generate_auth_cookie, constants::test},
     Application,
 };

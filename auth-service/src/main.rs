@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use auth_service::app_state::AppState;
-use auth_service::services::{
-    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient,
+use auth_service::services::data_stores::{
+    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore,
 };
+use auth_service::services::MockEmailClient;
 use auth_service::utils::constants::{prod, DATABASE_URL};
 use auth_service::{get_postgres_pool, Application};
 use sqlx::PgPool;
