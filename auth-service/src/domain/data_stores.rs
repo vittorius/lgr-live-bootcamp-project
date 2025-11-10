@@ -23,13 +23,14 @@ pub enum UserStoreError {
 
 #[async_trait]
 pub trait BannedTokenStore: Send + Sync + 'static {
-    async fn add_token(&mut self, token: String) -> Result<(), TokenStoreError>;
-    async fn token_exists(&self, token: &str) -> bool;
+    async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
+    async fn token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
 }
 
 #[derive(Debug)]
-pub enum TokenStoreError {
+pub enum BannedTokenStoreError {
     AlreadyExists,
+    UnexpectedError,
 }
 
 // This trait represents the interface all concrete 2FA code stores should implement

@@ -70,9 +70,13 @@ pub async fn validate_token(
     token: &str,
     banned_tokens: &dyn BannedTokenStore,
 ) -> Result<Claims, ValidateTokenError> {
-    if banned_tokens.token_exists(token).await {
+    if banned_tokens.token_exists(token).await.map_err(|_| {
+        ValidateTokenError::TokenError(jsonwebtoken::errors::Error::from(
+            jsonwebtoken::errors::ErrorKind::InvalidToken,
+        ))
+    })? {
         return Err(ValidateTokenError::Banned);
-    }
+    };
 
     decode::<Claims>(
         token,

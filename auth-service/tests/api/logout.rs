@@ -23,6 +23,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
             .await
             .token_exists(auth_cookie.value())
             .await
+            .expect("Failed to check token existence")
     );
 
     let response = app.post_logout().await;
@@ -34,6 +35,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
             .await
             .token_exists(auth_cookie.value())
             .await
+            .expect("Failed to check token existence")
     );
     let auth_cookie = response
         .cookies()
@@ -63,6 +65,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
             .await
             .token_exists(auth_cookie.value())
             .await
+            .expect("Failed to check token existence")
     );
 
     let auth_cookie = response

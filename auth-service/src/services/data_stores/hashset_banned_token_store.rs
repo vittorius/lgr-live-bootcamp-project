@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::domain::{BannedTokenStore, TokenStoreError};
+use crate::domain::{BannedTokenStore, BannedTokenStoreError};
 use async_trait::async_trait;
 
 #[derive(Default, Clone)]
@@ -10,15 +10,15 @@ pub struct HashsetBannedTokenStore {
 
 #[async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
-    async fn add_token(&mut self, token: String) -> Result<(), TokenStoreError> {
+    async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError> {
         self.tokens
             .insert(token)
             .then_some(())
-            .ok_or(TokenStoreError::AlreadyExists)
+            .ok_or(BannedTokenStoreError::AlreadyExists)
     }
 
-    async fn token_exists(&self, token: &str) -> bool {
-        self.tokens.contains(token)
+    async fn token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+        Ok(self.tokens.contains(token))
     }
 }
 
@@ -36,7 +36,7 @@ mod tests {
 
         // Test adding duplicate token
         let result = store.add_token("token1".to_string()).await;
-        assert!(matches!(result, Err(TokenStoreError::AlreadyExists)));
+        assert!(matches!(result, Err(BannedTokenStoreError::AlreadyExists)));
     }
 
     #[tokio::test]
@@ -44,13 +44,13 @@ mod tests {
         let mut store = HashsetBannedTokenStore::default();
 
         // Test non-existent token
-        assert!(!store.token_exists("token1").await);
+        assert!(!store.token_exists("token1").await.expect("Failed to check token existence"));
 
         // Add token and test existence
-        store.add_token("token1".to_string()).await.unwrap();
-        assert!(store.token_exists("token1").await);
+        store.add_token("token1".to_string()).await.expect("Failed to add token");
+        assert!(store.token_exists("token1").await.expect("Failed to check token existence"));
 
         // Test different non-existent token
-        assert!(!store.token_exists("token2").await);
+        assert!(!store.token_exists("token2").await.expect("Failed to check token existence"));
     }
 }
