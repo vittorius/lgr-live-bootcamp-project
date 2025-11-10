@@ -17,6 +17,11 @@
     "cwd": "$ZED_WORKTREE_ROOT/auth-service"
   },
   {
+    "label": "redis run",
+    "command": "docker run --rm --name ps-redis -p 6379:6379 redis:7.0-alpine",
+    "cwd": "$ZED_WORKTREE_ROOT/auth-service"
+  },
+  {
     "label": "cargo clippy fix",
     "command": "cargo clippy --fix --allow-dirty"
   },
