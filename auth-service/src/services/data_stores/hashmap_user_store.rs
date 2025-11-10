@@ -16,8 +16,8 @@ impl UserStore for HashmapUserStore {
             .map_or(Ok(()), |_| Err(UserStoreError::UserAlreadyExists))
     }
 
-    async fn get_user(&self, email: &Email) -> Result<&User, UserStoreError> {
-        self.users.get(email).ok_or(UserStoreError::UserNotFound)
+    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
+        self.users.get(email).ok_or(UserStoreError::UserNotFound).cloned()
     }
 
     async fn validate_user(
@@ -80,7 +80,7 @@ mod tests {
         );
 
         store.add_user(user.clone()).await.unwrap();
-        assert_eq!(store.get_user(&user.email).await.unwrap(), &user);
+        assert_eq!(store.get_user(&user.email).await.unwrap(), user);
     }
 
     #[tokio::test]

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auth_service::app_state::AppState;
 use auth_service::services::data_stores::{
-    HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore,
+    HashmapTwoFACodeStore, HashsetBannedTokenStore, PostgresUserStore,
 };
 use auth_service::services::MockEmailClient;
 use auth_service::utils::constants::{prod, DATABASE_URL};
@@ -12,7 +12,9 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
-    let user_store = HashmapUserStore::default();
+    let pg_pool = configure_postgresql().await;
+
+    let user_store = PostgresUserStore::new(pg_pool);
     let banned_token_store = HashsetBannedTokenStore::default();
     let two_fa_code_store = HashmapTwoFACodeStore::default();
     let email_client = MockEmailClient {};
@@ -22,7 +24,6 @@ async fn main() {
         Arc::new(RwLock::new(two_fa_code_store)),
         Arc::new(email_client),
     );
-    let pg_pool = configure_postgresql().await;
 
     let app = Application::build(app_state, prod::APP_ADDRESS)
         .await
