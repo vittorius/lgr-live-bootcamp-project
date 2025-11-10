@@ -1,4 +1,4 @@
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, get_random_email};
 use auth_service::{
     domain::Email,
     routes::{SignupResponse, TwoFactorAuthResponse},
@@ -11,7 +11,7 @@ use uuid::Uuid;
 #[tokio::test]
 async fn should_return_200_if_correct_code() {
     let app = TestApp::new().await;
-    let email = TestApp::get_random_email();
+    let email = get_random_email();
     let email_value = Email::parse(&email).expect("Must be valid email");
 
     let signup_body = serde_json::json!({
@@ -105,7 +105,7 @@ async fn should_return_400_if_invalid_input() {
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
     let app = TestApp::new().await;
-    let email = TestApp::get_random_email();
+    let email = get_random_email();
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();
 
@@ -167,7 +167,7 @@ async fn should_return_401_if_incorrect_credentials() {
 #[tokio::test]
 async fn should_return_401_if_old_code() {
     let app = TestApp::new().await;
-    let email = TestApp::get_random_email();
+    let email = get_random_email();
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();
 
@@ -228,7 +228,7 @@ async fn should_return_401_if_same_code_twice() {
     // Verify twice with the same 2FA code. This should fail.
 
     let app = TestApp::new().await;
-    let email = TestApp::get_random_email();
+    let email = get_random_email();
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();
 

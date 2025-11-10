@@ -1,7 +1,7 @@
 use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 use serde_json::json;
 
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
@@ -16,7 +16,7 @@ async fn should_return_422_if_malformed_input() {
 async fn should_return_200_valid_token() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
         "email": random_email,
@@ -80,7 +80,7 @@ async fn should_return_401_if_invalid_token() {
 async fn should_return_401_if_banned_token() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
         "email": random_email,

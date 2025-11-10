@@ -1,13 +1,13 @@
 use auth_service::{routes::SignupResponse, ErrorResponse};
 use serde_json::json;
 
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
 
     let test_cases = [
         json!({
@@ -41,7 +41,7 @@ async fn should_return_201_if_valid_input() {
 
     let response = app
         .post_signup(&json!({
-            "email": TestApp::get_random_email(),
+            "email": get_random_email(),
             "password": "password123",
             "requires2FA": false
         }))
@@ -78,7 +78,7 @@ async fn should_return_400_if_invalid_input() {
             "requires2FA": true
         }),
         json!({
-            "email": TestApp::get_random_email(),
+            "email": get_random_email(),
             "password": "short",
             "requires2FA": true
         }),
@@ -108,7 +108,7 @@ async fn should_return_400_if_invalid_input() {
 async fn should_return_409_if_email_already_exists() {
     let app = TestApp::new().await;
 
-    let email = TestApp::get_random_email();
+    let email = get_random_email();
     let password = "password123";
 
     let response = app
@@ -129,6 +129,7 @@ async fn should_return_409_if_email_already_exists() {
         }))
         .await;
 
+    eprintln!("Failed Response: {:?}", response);
     assert_eq!(response.status().as_u16(), 409);
     assert_eq!(
         response

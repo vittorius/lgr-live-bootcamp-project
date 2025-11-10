@@ -3,13 +3,13 @@ use auth_service::{
 };
 use serde_json::json;
 
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, get_random_email};
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
 
     let test_cases = [
         json!({
@@ -53,11 +53,11 @@ async fn should_return_400_if_invalid_input() {
             "password": "password123",
         }),
         json!({
-            "email": TestApp::get_random_email(),
+            "email": get_random_email(),
             "password": "short",
         }),
         json!({
-            "email": TestApp::get_random_email(),
+            "email": get_random_email(),
             "password": "",
         }),
     ];
@@ -116,7 +116,7 @@ async fn should_return_401_if_incorrect_credentials() {
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
         "email": random_email,
@@ -149,7 +149,7 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
         "email": random_email,

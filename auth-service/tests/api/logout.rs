@@ -1,4 +1,4 @@
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, get_random_email};
 use auth_service::{
     domain::Email,
     utils::{auth::generate_auth_cookie, constants::JWT_COOKIE_NAME},
@@ -10,7 +10,7 @@ use reqwest::Url;
 async fn should_return_200_if_valid_jwt_cookie() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
     let auth_cookie = generate_auth_cookie(&Email::parse(&random_email).expect("Invalid email"))
         .expect("Failed to generate auth cookie");
     app.cookie_jar.add_cookie_str(
@@ -48,7 +48,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
 async fn should_return_400_if_logout_called_twice_in_a_row() {
     let app = TestApp::new().await;
 
-    let random_email = TestApp::get_random_email();
+    let random_email = get_random_email();
     let auth_cookie = generate_auth_cookie(&Email::parse(&random_email).expect("Invalid email"))
         .expect("Failed to generate auth cookie");
     app.cookie_jar.add_cookie_str(
