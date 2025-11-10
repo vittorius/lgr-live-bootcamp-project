@@ -1,4 +1,4 @@
-use crate::helpers::{TestApp, get_random_email};
+use crate::helpers::{get_random_email, TestApp};
 use auth_service::{
     domain::Email,
     routes::{SignupResponse, TwoFactorAuthResponse},
@@ -6,11 +6,11 @@ use auth_service::{
     ErrorResponse,
 };
 use serde_json::json;
+use test_helpers::api_test;
 use uuid::Uuid;
 
-#[tokio::test]
+#[api_test]
 async fn should_return_200_if_correct_code() {
-    let app = TestApp::new().await;
     let email = get_random_email();
     let email_value = Email::parse(&email).expect("Must be valid email");
 
@@ -56,7 +56,7 @@ async fn should_return_200_if_correct_code() {
     assert!(!auth_cookie.value().is_empty());
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_input() {
     let test_cases = [
         json!({"email": null, "loginAttemptId": "12345678-1234-1234-1234-123456789012", "2FACode": "123456"}),
@@ -69,14 +69,13 @@ async fn should_return_422_if_malformed_input() {
     ];
 
     for test_case in test_cases {
-        let app = TestApp::new().await;
         let response = app.post_verify_2fa(&test_case).await;
 
         assert_eq!(response.status(), 422, "Failed for input: {:?}", test_case);
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
     let test_cases = [
         json!({"email": "invalid-email", "loginAttemptId": "12345678-1234-1234-1234-123456789012", "2FACode": "123456"}),
@@ -86,7 +85,6 @@ async fn should_return_400_if_invalid_input() {
     ];
 
     for test_case in test_cases {
-        let app = TestApp::new().await;
         let response = app.post_verify_2fa(&test_case).await;
 
         assert_eq!(response.status(), 400);
@@ -102,9 +100,8 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
     let email = get_random_email();
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();
@@ -149,7 +146,6 @@ async fn should_return_401_if_incorrect_credentials() {
     ];
 
     for test_case in test_cases {
-        let app = TestApp::new().await;
         let response = app.post_verify_2fa(&test_case).await;
 
         assert_eq!(response.status(), 401, "Failed for input: {:?}", test_case);
@@ -164,9 +160,8 @@ async fn should_return_401_if_incorrect_credentials() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_old_code() {
-    let app = TestApp::new().await;
     let email = get_random_email();
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();
@@ -223,11 +218,10 @@ async fn should_return_401_if_old_code() {
     assert_eq!(response.status(), 401);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_same_code_twice() {
     // Verify twice with the same 2FA code. This should fail.
 
-    let app = TestApp::new().await;
     let email = get_random_email();
     let email_value = Email::parse(&email).unwrap();
     let password = "password".to_owned();

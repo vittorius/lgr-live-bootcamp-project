@@ -1,12 +1,11 @@
 use auth_service::{routes::SignupResponse, ErrorResponse};
 use serde_json::json;
+use test_helpers::api_test;
 
-use crate::helpers::{TestApp, get_random_email};
+use crate::helpers::{get_random_email, TestApp};
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let test_cases = [
@@ -35,10 +34,8 @@ async fn should_return_422_if_malformed_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_201_if_valid_input() {
-    let app = TestApp::new().await;
-
     let response = app
         .post_signup(&json!({
             "email": get_random_email(),
@@ -62,10 +59,8 @@ async fn should_return_201_if_valid_input() {
     );
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
-
     let test_cases = [
         json!({
             "email": "",
@@ -104,10 +99,8 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_409_if_email_already_exists() {
-    let app = TestApp::new().await;
-
     let email = get_random_email();
     let password = "password123";
 

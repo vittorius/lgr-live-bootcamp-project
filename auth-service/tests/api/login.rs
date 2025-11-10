@@ -2,13 +2,12 @@ use auth_service::{
     domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
 use serde_json::json;
+use test_helpers::api_test;
 
-use crate::helpers::{TestApp, get_random_email};
+use crate::helpers::{get_random_email, TestApp};
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let test_cases = [
@@ -31,10 +30,8 @@ async fn should_return_422_if_malformed_credentials() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
-
     let test_cases = [
         json!({
             "email": "",
@@ -82,11 +79,9 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_incorrect_credentials() {
-    let test_app = TestApp::new().await;
-
-    let response = test_app
+    let response = app
         .post_login(&json!({
             "email": "me@example.com",
             "password": "password123",
@@ -112,10 +107,8 @@ async fn should_return_401_if_incorrect_credentials() {
     );
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -145,10 +138,8 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     assert!(!auth_cookie.value().is_empty());
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
-
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({

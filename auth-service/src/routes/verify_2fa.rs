@@ -19,6 +19,8 @@ pub async fn post_verify_2fa(
     let two_fa_code =
         TwoFACode::parse(request.two_fa_code).map_err(|_| AuthAPIError::InvalidCredentials)?; // Validate the 2FA code in `request`
 
+    // TODO: reduce the lock scope here and everywhere else
+    // see https://discord.com/channels/818251276378701824/1433205499775680594/1434195659958784220
     let mut two_fa_code_store = state.two_fa_code_store.write().await;
     let code_tuple = two_fa_code_store
         .get_code(&email)
