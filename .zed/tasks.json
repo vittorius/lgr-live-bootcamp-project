@@ -12,6 +12,11 @@
     "cwd": "$ZED_WORKTREE_ROOT/auth-service"
   },
   {
+    "label": "db run",
+    "command": "docker run --rm --name ps-db -e POSTGRES_PASSWORD=auth-svc-password -p 5432:5432 -v lgr-live-bootcamp-project_db:/var/lib/postgresql/data postgres:15.2-alpine",
+    "cwd": "$ZED_WORKTREE_ROOT/auth-service"
+  },
+  {
     "label": "cargo clippy fix",
     "command": "cargo clippy --fix --allow-dirty"
   },
