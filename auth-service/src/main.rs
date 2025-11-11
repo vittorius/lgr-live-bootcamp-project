@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use auth_service::app_state::AppState;
 use auth_service::services::data_stores::{
-    HashmapTwoFACodeStore, PostgresUserStore, RedisBannedTokenStore,
+    PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore,
 };
 use auth_service::services::MockEmailClient;
 use auth_service::utils::constants::{prod, DATABASE_URL, REDIS_HOST_NAME};
@@ -19,7 +19,7 @@ async fn main() {
     let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(
         redis_connection.clone(),
     )));
-    let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));
+    let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_connection)));
     let email_client = Arc::new(MockEmailClient {});
 
     let app_state = AppState::new(
