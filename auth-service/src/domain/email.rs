@@ -3,19 +3,14 @@ use email_address::{EmailAddress, Options};
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Email(String);
 
-#[derive(Debug)]
-pub enum EmailError {
-    Invalid,
-}
-
 impl Email {
-    pub fn parse(email: &str) -> Result<Self, EmailError> {
+    pub fn parse(email: &str) -> Result<Self, String> {
         if let Ok(email_address) =
             EmailAddress::parse_with_options(email, Options::default().with_required_tld())
         {
             Ok(Email(String::from(email_address.as_str())))
         } else {
-            Err(EmailError::Invalid)
+            Err(format!("{} is not a valid email.", email))
         }
     }
 }
