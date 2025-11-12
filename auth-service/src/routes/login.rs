@@ -1,6 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -65,7 +65,7 @@ async fn handle_2fa(
         jar,
         LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
             message: "2FA required".to_owned(),
-            login_attempt_id: login_attempt_id.as_ref().to_owned(),
+            login_attempt_id: login_attempt_id.as_ref().expose_secret().clone(),
         })
         .into(),
     ))

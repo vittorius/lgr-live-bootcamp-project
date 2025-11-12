@@ -32,7 +32,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         let key = get_key(&email);
 
         let data = TwoFATuple(
-            login_attempt_id.as_ref().to_owned(),
+            login_attempt_id.as_ref().expose_secret().clone(),
             code.as_ref().to_owned(),
         );
         let serialized_data = serde_json::to_string(&data)
@@ -79,7 +79,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
                     .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 let login_attempt_id =
-                    LoginAttemptId::parse(data.0).map_err(TwoFACodeStoreError::UnexpectedError)?;
+                    LoginAttemptId::parse(data.0.into()).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 let email_code =
                     TwoFACode::parse(data.1).map_err(TwoFACodeStoreError::UnexpectedError)?;

@@ -5,6 +5,7 @@ use auth_service::{
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };
+use secrecy::ExposeSecret;
 use serde_json::json;
 use test_helpers::api_test;
 use uuid::Uuid;
@@ -135,13 +136,13 @@ async fn should_return_401_if_incorrect_credentials() {
         .await
         .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
 
-    assert_eq!(response_body.login_attempt_id, login_attempt_id.as_ref());
+    assert_eq!(response_body.login_attempt_id, *login_attempt_id.as_ref().expose_secret());
 
     let two_fa_code = two_fa_code.as_ref();
 
     let test_cases = [
-        json!({"email": "missing@example.com", "loginAttemptId": login_attempt_id.as_ref(), "2FACode": two_fa_code}),
-        json!({"email": email, "loginAttemptId": login_attempt_id.as_ref(), "2FACode":  two_fa_code.chars().rev().collect::<String>()}),
+        json!({"email": "missing@example.com", "loginAttemptId": login_attempt_id.as_ref().expose_secret(), "2FACode": two_fa_code}),
+        json!({"email": email, "loginAttemptId": login_attempt_id.as_ref().expose_secret(), "2FACode":  two_fa_code.chars().rev().collect::<String>()}),
         json!({"email": email, "loginAttemptId": Uuid::new_v4(), "2FACode": two_fa_code}),
     ];
 
@@ -201,7 +202,7 @@ async fn should_return_401_if_old_code() {
         .await
         .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
 
-    assert_eq!(response_body.login_attempt_id, login_attempt_id.as_ref());
+    assert_eq!(response_body.login_attempt_id, *login_attempt_id.as_ref().expose_secret());
 
     // second login to invalidate the 1st login 2FA code
     let response = app.post_login(&login_body).await;
@@ -210,7 +211,7 @@ async fn should_return_401_if_old_code() {
     let response = app
         .post_verify_2fa(&json!({
             "email": email,
-            "loginAttemptId": login_attempt_id.as_ref(),
+            "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
             "2FACode": two_fa_code.as_ref()
         }))
         .await;
@@ -253,11 +254,11 @@ async fn should_return_401_if_same_code_twice() {
         .get_code(&email_value)
         .await
         .unwrap_or_else(|_| panic!("2FA code for {email} must be in store"));
-    assert_eq!(response_body.login_attempt_id, login_attempt_id.as_ref());
+    assert_eq!(response_body.login_attempt_id, *login_attempt_id.as_ref().expose_secret());
 
     let body = &json!({
         "email": email,
-        "loginAttemptId": login_attempt_id.as_ref(),
+        "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
         "2FACode":two_fa_code.as_ref()
     });
 

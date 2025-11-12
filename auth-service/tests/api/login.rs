@@ -1,6 +1,7 @@
 use auth_service::{
     domain::Email, routes::TwoFactorAuthResponse, utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
+use secrecy::ExposeSecret;
 use serde_json::json;
 use test_helpers::api_test;
 
@@ -175,7 +176,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
             .await
             .expect("Login attempt ID must be present in store")
             .0
-            .as_ref(),
-        json_body.login_attempt_id
+            .as_ref().expose_secret(),
+        &json_body.login_attempt_id
     );
 }
