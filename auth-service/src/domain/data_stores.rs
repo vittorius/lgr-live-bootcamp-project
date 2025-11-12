@@ -54,7 +54,7 @@ pub enum BannedTokenStoreError {
 }
 
 // This trait represents the interface all concrete 2FA code stores should implement
-#[async_trait::async_trait]
+#[async_trait]
 pub trait TwoFACodeStore: Send + Sync + 'static {
     async fn add_code(
         &mut self,
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_default_two_fa_code_is_valid() {
-        for _ in 0..100 {
+        for _ in 0..100 { // because this is random
             let code = TwoFACode::default();
             assert_eq!(code.0.len(), 6);
             assert!(code.0.chars().all(|c| c.is_ascii_digit()));

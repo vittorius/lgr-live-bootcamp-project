@@ -49,10 +49,9 @@ impl Application {
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::signup))
             .route("/login", post(routes::login))
-            // TODO: uncomment
-            // .route("/verify-2fa", post(routes::post_verify_2fa))
-            // .route("/logout", post(routes::post_logout))
-            // .route("/verify-token", post(routes::post_verify_token))
+            .route("/verify-2fa", post(routes::verify_2fa))
+            .route("/logout", post(routes::logout))
+            .route("/verify-token", post(routes::verify_token))
             .with_state(app_state)
             .layer(cors)
             .layer(
