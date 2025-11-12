@@ -8,6 +8,7 @@ use crate::{
     utils::auth::generate_auth_cookie,
 };
 
+#[tracing::instrument(name = "Login", skip_all)]
 pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -35,6 +36,7 @@ pub async fn login(
     }
 }
 
+#[tracing::instrument(name = "2FA scenario", skip_all)]
 async fn handle_2fa(
     email: &Email,
     state: &AppState,
@@ -68,6 +70,7 @@ async fn handle_2fa(
     ))
 }
 
+#[tracing::instrument(name = "no 2FA scenario", skip_all)]
 async fn handle_no_2fa(
     email: &Email,
     jar: CookieJar,
