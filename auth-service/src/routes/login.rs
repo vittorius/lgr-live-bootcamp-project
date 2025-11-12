@@ -56,7 +56,7 @@ async fn handle_2fa(
 
     state
         .email_client
-        .send_email(email, "Your 2FA code", two_fa_code.as_ref())
+        .send_email(email, "Your 2FA code", two_fa_code.as_ref().expose_secret())
         .await
         .map_err(AuthAPIError::UnexpectedError)?;
 

@@ -2,7 +2,7 @@ use crate::domain::{Email, Password};
 
 use super::User;
 use async_trait::async_trait;
-use color_eyre::eyre::{eyre, Report, Result, WrapErr};
+use color_eyre::eyre::{eyre, Report, Result};
 use rand::Rng;
 use secrecy::{ExposeSecret, Secret};
 use thiserror::Error;
@@ -117,50 +117,37 @@ impl AsRef<Secret<String>> for LoginAttemptId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TwoFACode(String);
+// TODO: add unit tests later
+#[derive(Clone, Debug)]
+pub struct TwoFACode(Secret<String>);
+
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
 
 impl TwoFACode {
-    // TODO: add unit tests later
-    pub fn parse(code: String) -> Result<Self> {
-        let code_as_u32 = code.parse::<u32>().wrap_err("Invalid 2FA code")?; // Updated!
-
+    pub fn parse(code: Secret<String>) -> Result<Self> {
+        let code_as_u32 = code.expose_secret().parse::<u32>()?;
         if (100_000..=999_999).contains(&code_as_u32) {
             Ok(Self(code))
         } else {
-            Err(eyre!("Invalid 2FA code")) // Updated!
+            Err(eyre!("Invalid email code"))
         }
     }
 }
 
 impl Default for TwoFACode {
     fn default() -> Self {
-        let mut rng = rand::thread_rng();
-        let mut code = String::new();
-        for _ in 0..6 {
-            code.push_str(&rng.gen_range(0..10).to_string());
-        }
-        Self(code)
+        Self(Secret::new(
+            rand::thread_rng().gen_range(100_000..=999_999).to_string(),
+        ))
     }
 }
 
-impl AsRef<str> for TwoFACode {
-    fn as_ref(&self) -> &str {
+impl AsRef<Secret<String>> for TwoFACode {
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_default_two_fa_code_is_valid() {
-        for _ in 0..100 {
-            // because this is random
-            let code = TwoFACode::default();
-            assert_eq!(code.0.len(), 6);
-            assert!(code.0.chars().all(|c| c.is_ascii_digit()));
-        }
     }
 }

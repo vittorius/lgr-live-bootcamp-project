@@ -117,7 +117,7 @@ mod tests {
         let mut store = make_store();
         let (email, attempt_id1, code1) = make_sample_data();
         let attempt_id2 = LoginAttemptId::default(); // new UUID
-        let code2 = TwoFACode::parse("999999".to_owned()).expect("Must be valid 2FA code");
+        let code2 = TwoFACode::parse("999999".to_owned().into()).expect("Must be valid 2FA code");
 
         store
             .add_code(email.clone(), attempt_id1.clone(), code1.clone())

@@ -33,7 +33,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
 
         let data = TwoFATuple(
             login_attempt_id.as_ref().expose_secret().clone(),
-            code.as_ref().to_owned(),
+            code.as_ref().expose_secret().clone(),
         );
         let serialized_data = serde_json::to_string(&data)
             .wrap_err("failed to serialize 2FA tuple")
@@ -82,7 +82,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
                     LoginAttemptId::parse(data.0.into()).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 let email_code =
-                    TwoFACode::parse(data.1).map_err(TwoFACodeStoreError::UnexpectedError)?;
+                    TwoFACode::parse(data.1.into()).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 Ok((login_attempt_id, email_code))
             }
