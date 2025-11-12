@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use color_eyre::eyre::{Result, WrapErr};
 use redis::{Commands, Connection};
 use tokio::sync::RwLock;
-use color_eyre::eyre::{Result, WrapErr};
 
 use crate::{
     domain::{BannedTokenStore, BannedTokenStoreError},
@@ -21,6 +21,7 @@ impl RedisBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for RedisBannedTokenStore {
+    #[tracing::instrument(skip_all)]
     async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError> {
         let token_key = get_key(token.as_str());
 
@@ -42,6 +43,7 @@ impl BannedTokenStore for RedisBannedTokenStore {
         Ok(())
     }
 
+    #[tracing::instrument(skip_all)]
     async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         let token_key = get_key(token);
 
