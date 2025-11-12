@@ -47,8 +47,8 @@ impl Application {
 
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
-            .route("/signup", post(routes::post_signup))
-            .route("/login", post(routes::post_login))
+            .route("/signup", post(routes::signup))
+            .route("/login", post(routes::login))
             // TODO: uncomment
             // .route("/verify-2fa", post(routes::post_verify_2fa))
             // .route("/logout", post(routes::post_logout))

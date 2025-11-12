@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[tracing::instrument(name = "Signup", skip_all)]
-pub async fn post_signup(
+pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<(StatusCode, impl IntoResponse), AuthAPIError> {
