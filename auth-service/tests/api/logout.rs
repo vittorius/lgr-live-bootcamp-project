@@ -10,7 +10,7 @@ use test_helpers::api_test;
 #[api_test]
 async fn should_return_200_if_valid_jwt_cookie() {
     let random_email = get_random_email();
-    let auth_cookie = generate_auth_cookie(&Email::parse(&random_email).expect("Invalid email"))
+    let auth_cookie = generate_auth_cookie(&Email::parse(random_email.into()).expect("Invalid email"))
         .expect("Failed to generate auth cookie");
     app.cookie_jar.add_cookie_str(
         &auth_cookie.to_string(),
@@ -48,7 +48,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
 #[api_test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
     let random_email = get_random_email();
-    let auth_cookie = generate_auth_cookie(&Email::parse(&random_email).expect("Invalid email"))
+    let auth_cookie = generate_auth_cookie(&Email::parse(random_email.into()).expect("Invalid email"))
         .expect("Failed to generate auth cookie");
     app.cookie_jar.add_cookie_str(
         &auth_cookie.to_string(),

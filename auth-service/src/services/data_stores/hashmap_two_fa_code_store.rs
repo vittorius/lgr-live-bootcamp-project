@@ -50,7 +50,7 @@ mod tests {
 
     fn make_sample_data() -> (Email, LoginAttemptId, TwoFACode) {
         (
-            Email::parse("user@example.com").expect("Must be valid email"),
+            Email::parse("user@example.com".to_owned().into()).expect("Must be valid email"),
             LoginAttemptId::default(),
             TwoFACode::default(),
         )
@@ -78,7 +78,7 @@ mod tests {
     #[tokio::test]
     async fn get_code_not_found() {
         let store = make_store();
-        let email = Email::parse("notfound@example.com").expect("Must be valid email");
+        let email = Email::parse("notfound@example.com".to_owned().into()).expect("Must be valid email");
 
         let err = store.get_code(&email).await.unwrap_err();
         assert!(matches!(err, TwoFACodeStoreError::LoginAttemptIdNotFound));
@@ -106,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn remove_code_not_found() {
         let mut store = make_store();
-        let email = Email::parse("unknown@example.com").expect("Must be valid email");
+        let email = Email::parse("unknown@example.com".to_owned().into()).expect("Must be valid email");
 
         let err = store.remove_code(&email).await.unwrap_err();
         assert!(matches!(err, TwoFACodeStoreError::LoginAttemptIdNotFound));

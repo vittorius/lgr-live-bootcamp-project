@@ -14,7 +14,7 @@ pub async fn verify_2fa(
     jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
 ) -> Result<(StatusCode, CookieJar), AuthAPIError> {
-    let email = Email::parse(&request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let email = Email::parse(request.email.into()).map_err(|_| AuthAPIError::InvalidCredentials)?;
     let login_attempt_id = LoginAttemptId::parse(request.login_attempt_id)
         .map_err(|_| AuthAPIError::InvalidCredentials)?; // Validate the login attempt ID in `request`
     let two_fa_code =

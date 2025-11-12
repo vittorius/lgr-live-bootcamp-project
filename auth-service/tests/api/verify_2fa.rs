@@ -12,7 +12,7 @@ use uuid::Uuid;
 #[api_test]
 async fn should_return_200_if_correct_code() {
     let email = get_random_email();
-    let email_value = Email::parse(&email).expect("Must be valid email");
+    let email_value = Email::parse(email.clone().into()).expect("Must be valid email");
 
     let signup_body = serde_json::json!({
         "email": email,
@@ -103,7 +103,7 @@ async fn should_return_400_if_invalid_input() {
 #[api_test]
 async fn should_return_401_if_incorrect_credentials() {
     let email = get_random_email();
-    let email_value = Email::parse(&email).unwrap();
+    let email_value = Email::parse(email.clone().into()).unwrap();
     let password = "password".to_owned();
 
     // not checking the response status because we explicitly deserialize the response body to SignupResponse
@@ -163,7 +163,7 @@ async fn should_return_401_if_incorrect_credentials() {
 #[api_test]
 async fn should_return_401_if_old_code() {
     let email = get_random_email();
-    let email_value = Email::parse(&email).unwrap();
+    let email_value = Email::parse(email.clone().into()).unwrap();
     let password = "password".to_owned();
 
     // not checking the status code because we explicitly deserialize the response body into SignupResponse
@@ -223,7 +223,7 @@ async fn should_return_401_if_same_code_twice() {
     // Verify twice with the same 2FA code. This should fail.
 
     let email = get_random_email();
-    let email_value = Email::parse(&email).unwrap();
+    let email_value = Email::parse(email.clone().into()).unwrap();
     let password = "password".to_owned();
 
     app.post_signup(&json!({

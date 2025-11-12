@@ -171,7 +171,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         app.two_fa_code_store
             .read()
             .await
-            .get_code(&Email::parse(&random_email).expect("Must be valid email"))
+            .get_code(&Email::parse(random_email.into()).expect("Must be valid email"))
             .await
             .expect("Login attempt ID must be present in store")
             .0
