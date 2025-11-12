@@ -125,8 +125,8 @@ async fn compute_password_hash(password: String) -> EyreResult<String> {
             .hash_password(password.as_bytes(), &salt)?
             .to_string();
 
-            // Ok(password_hash)
-            Err(eyre!("oh no!"))
+            Ok(password_hash)
+            // Err(eyre!("oh no!"))
         })
     })
     .await?

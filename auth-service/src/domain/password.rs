@@ -1,12 +1,14 @@
+use color_eyre::eyre::{eyre, Result};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Password(String);
 
 impl Password {
-    pub fn parse(password: &str) -> Result<Self, String> {
+    pub fn parse(password: &str) -> Result<Self> {
         if password.len() >= 8 {
             Ok(Self(String::from(password)))
         } else {
-            Err("Failed to parse string to a Password type".to_owned())
+            Err(eyre!("Failed to parse string to a Password type"))
         }
     }
 }

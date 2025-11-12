@@ -7,7 +7,7 @@ pub async fn post_verify_token(
     State(state): State<AppState>,
     Json(request): Json<VerifyTokenRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    validate_token(&request.token, &*state.banned_token_store.read().await)
+    validate_token(&request.token, state.banned_token_store.clone())
         .await
         .map_err(|_| AuthAPIError::InvalidToken)?;
 

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use color_eyre::eyre::Context;
 use redis::{Commands, Connection};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
@@ -32,15 +33,17 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             login_attempt_id.as_ref().to_owned(),
             code.as_ref().to_owned(),
         );
-        let serialized_data =
-            serde_json::to_string(&data).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+        let serialized_data = serde_json::to_string(&data)
+            .wrap_err("failed to serialize 2FA tuple")
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         let _: () = self
             .conn
             .write()
             .await
             .set_ex(&key, serialized_data, TEN_MINUTES_IN_SECONDS)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .wrap_err("failed to set 2FA code in Redis")
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         Ok(())
     }
@@ -53,7 +56,8 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
             .write()
             .await
             .del(&key)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+            .wrap_err("failed to delete 2FA code from Redis")
+            .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
         Ok(())
     }
@@ -67,13 +71,14 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         match self.conn.write().await.get::<_, String>(&key) {
             Ok(value) => {
                 let data: TwoFATuple = serde_json::from_str(&value)
-                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+                    .wrap_err("failed to deserialize 2FA tuple")
+                    .map_err(TwoFACodeStoreError::UnexpectedError)?;
 
-                let login_attempt_id = LoginAttemptId::parse(data.0)
-                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+                let login_attempt_id =
+                    LoginAttemptId::parse(data.0).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 let email_code =
-                    TwoFACode::parse(data.1).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+                    TwoFACode::parse(data.1).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 Ok((login_attempt_id, email_code))
             }

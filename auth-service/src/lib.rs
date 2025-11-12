@@ -48,11 +48,11 @@ impl Application {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(routes::post_signup))
+            .route("/login", post(routes::post_login))
             // TODO: uncomment
-            // .route("/login", post(routes::post_login))
             // .route("/verify-2fa", post(routes::post_verify_2fa))
             // .route("/logout", post(routes::post_logout))
-            .route("/verify-token", post(routes::post_verify_token))
+            // .route("/verify-token", post(routes::post_verify_token))
             .with_state(app_state)
             .layer(cors)
             .layer(

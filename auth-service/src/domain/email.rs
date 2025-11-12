@@ -1,16 +1,17 @@
+use color_eyre::eyre::{eyre, Result};
 use email_address::{EmailAddress, Options};
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Email(String);
 
 impl Email {
-    pub fn parse(email: &str) -> Result<Self, String> {
+    pub fn parse(email: &str) -> Result<Self> {
         if let Ok(email_address) =
             EmailAddress::parse_with_options(email, Options::default().with_required_tld())
         {
             Ok(Email(String::from(email_address.as_str())))
         } else {
-            Err(format!("{} is not a valid email.", email))
+            Err(eyre!("{} is not a valid email.", email))
         }
     }
 }

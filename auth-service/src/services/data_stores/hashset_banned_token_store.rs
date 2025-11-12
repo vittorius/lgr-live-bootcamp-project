@@ -17,7 +17,7 @@ impl BannedTokenStore for HashsetBannedTokenStore {
             .ok_or(BannedTokenStoreError::AlreadyExists)
     }
 
-    async fn token_exists(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
+    async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         Ok(self.tokens.contains(token))
     }
 }
@@ -44,13 +44,13 @@ mod tests {
         let mut store = HashsetBannedTokenStore::default();
 
         // Test non-existent token
-        assert!(!store.token_exists("token1").await.expect("Failed to check token existence"));
+        assert!(!store.contains_token("token1").await.expect("Failed to check token existence"));
 
         // Add token and test existence
         store.add_token("token1".to_string()).await.expect("Failed to add token");
-        assert!(store.token_exists("token1").await.expect("Failed to check token existence"));
+        assert!(store.contains_token("token1").await.expect("Failed to check token existence"));
 
         // Test different non-existent token
-        assert!(!store.token_exists("token2").await.expect("Failed to check token existence"));
+        assert!(!store.contains_token("token2").await.expect("Failed to check token existence"));
     }
 }
