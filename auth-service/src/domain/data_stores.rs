@@ -4,6 +4,7 @@ use super::User;
 use async_trait::async_trait;
 use color_eyre::eyre::{eyre, Report, Result as EyreResult, WrapErr};
 use rand::Rng;
+use secrecy::Secret;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -41,8 +42,8 @@ impl PartialEq for UserStoreError {
 
 #[async_trait]
 pub trait BannedTokenStore: Send + Sync + 'static {
-    async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
-    async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn add_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError>;
+    async fn contains_token(&self, token: &Secret<String>) -> Result<bool, BannedTokenStoreError>;
 }
 
 #[derive(Debug, Error)]
