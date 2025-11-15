@@ -11,6 +11,7 @@ lazy_static! {
     pub static ref DATABASE_URL: Secret<String> = set_database_url();
     pub static ref REDIS_HOST_NAME: String = set_redis_host();
     pub static ref POSTMARK_AUTH_TOKEN: Secret<String> = set_postmark_auth_token();
+    pub static ref RESEND_AUTH_TOKEN: Secret<String> = set_resend_auth_token();
 }
 
 fn set_token() -> Secret<String> {
@@ -46,11 +47,21 @@ fn set_postmark_auth_token() -> Secret<String> {
     Secret::new(token)
 }
 
+fn set_resend_auth_token() -> Secret<String> {
+    dotenv().ok();
+    let token =
+        std_env::var(env::RESEND_AUTH_TOKEN_ENV_VAR).expect("RESEND_AUTH_TOKEN must be set.");
+    if token.is_empty() {
+        panic!("RESEND_AUTH_TOKEN must not be empty.");
+    }
+    Secret::new(token)
+}
 pub mod env {
     pub const JWT_SECRET_ENV_VAR: &str = "JWT_SECRET";
     pub const DATABASE_URL_ENV_VAR: &str = "DATABASE_URL";
     pub const REDIS_HOST_NAME_ENV_VAR: &str = "REDIS_HOST_NAME";
     pub const POSTMARK_AUTH_TOKEN_ENV_VAR: &str = "POSTMARK_AUTH_TOKEN";
+    pub const RESEND_AUTH_TOKEN_ENV_VAR: &str = "RESEND_AUTH_TOKEN";
 }
 
 pub mod prod {
@@ -58,9 +69,10 @@ pub mod prod {
     pub mod email_client {
         use std::time::Duration;
 
-        pub const BASE_URL: &str = "https://api.postmarkapp.com/email";
-        // If you created your own Postmark account, make sure to use your email address!
-        pub const SENDER: &str = "bogdan@codeiron.io";
+        // pub const BASE_URL: &str = "https://api.postmarkapp.com/email"; // Postmark
+        pub const BASE_URL: &str = "https://api.resend.com"; // Resend
+        // pub const SENDER: &str = "bogdan@codeiron.io"; // Postmark
+        pub const SENDER: &str = "onboarding@resend.dev"; // Resend
         pub const TIMEOUT: Duration = std::time::Duration::from_secs(10);
     }
 }
