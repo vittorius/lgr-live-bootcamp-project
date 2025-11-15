@@ -1,10 +1,9 @@
-use async_trait::async_trait;
-use std::error::Error;
-
 use argon2::{
     password_hash::SaltString, Algorithm, Argon2, Params, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
+use async_trait::async_trait;
+use color_eyre::eyre::{eyre, Context, Result as EyreResult};
 
 use sqlx::PgPool;
 use tokio::task;
@@ -24,10 +23,10 @@ impl PostgresUserStore {
 #[async_trait]
 impl UserStore for PostgresUserStore {
     #[tracing::instrument(name = "Adding user to PostgreSQL", skip_all)]
-    async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
+    async fn add_user(&mut self, user: User) -> EyreResult<(), UserStoreError> {
         let password_hash = compute_password_hash(user.password.as_ref().to_owned())
             .await
-            .map_err(|_| UserStoreError::UnexpectedError)?;
+            .map_err(UserStoreError::UnexpectedError)?;
 
         sqlx::query!(
             r#"
@@ -44,14 +43,14 @@ impl UserStore for PostgresUserStore {
             sqlx::Error::Database(err) if err.code().is_some_and(|code| code == "23505") => {
                 UserStoreError::UserAlreadyExists
             }
-            _ => UserStoreError::UnexpectedError,
+            e => UserStoreError::UnexpectedError(e.into()),
         })?;
 
         Ok(())
     }
 
     #[tracing::instrument(name = "Retrieving user from PostgreSQL", skip_all)]
-    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
+    async fn get_user(&self, email: &Email) -> EyreResult<User, UserStoreError> {
         sqlx::query!(
             r#"
                 SELECT email, password_hash, requires_2fa
@@ -62,12 +61,13 @@ impl UserStore for PostgresUserStore {
         )
         .fetch_optional(&self.pool)
         .await
-        .map_err(|_| UserStoreError::UnexpectedError)?
+        .map_err(|e| UserStoreError::UnexpectedError(e.into()))?
         .map(|row| {
             Ok(User {
-                email: Email::parse(&row.email).map_err(|_| UserStoreError::UnexpectedError)?,
+                email: Email::parse(&row.email)
+                    .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
                 password: Password::parse(&row.password_hash)
-                    .map_err(|_| UserStoreError::UnexpectedError)?,
+                    .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
                 requires_2fa: row.requires_2fa,
             })
         })
@@ -96,7 +96,7 @@ impl UserStore for PostgresUserStore {
 async fn verify_password_hash(
     expected_password_hash: String,
     password_candidate: String,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> EyreResult<()> {
     let current_span: tracing::Span = tracing::Span::current();
     task::spawn_blocking(move || {
         current_span.in_scope(|| {
@@ -104,7 +104,7 @@ async fn verify_password_hash(
                 PasswordHash::new(&expected_password_hash)?;
             Argon2::default()
                 .verify_password(password_candidate.as_bytes(), &expected_password_hash)
-                .map_err(|err| err.into())
+                .wrap_err("failed to verify password hash")
         })
     })
     .await?
@@ -112,7 +112,7 @@ async fn verify_password_hash(
 
 // Helper function to hash passwords before persisting them in the database.
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: String) -> Result<String, Box<dyn Error + Send + Sync>> {
+async fn compute_password_hash(password: String) -> EyreResult<String> {
     let current_span: tracing::Span = tracing::Span::current();
     task::spawn_blocking(move || {
         current_span.in_scope(|| {
@@ -126,6 +126,7 @@ async fn compute_password_hash(password: String) -> Result<String, Box<dyn Error
             .to_string();
 
             Ok(password_hash)
+            // Err(eyre!("oh no!"))
         })
     })
     .await?

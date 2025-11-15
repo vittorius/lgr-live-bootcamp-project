@@ -7,7 +7,7 @@ use crate::{
     utils::{auth::validate_token, constants::JWT_COOKIE_NAME},
 };
 
-pub async fn post_logout(
+pub async fn logout(
     State(state): State<AppState>,
     jar: CookieJar,
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
@@ -15,7 +15,7 @@ pub async fn post_logout(
 
     let token = cookie.value().to_owned();
 
-    validate_token(&token, &*state.banned_token_store.read().await)
+    validate_token(&token, state.banned_token_store.clone())
         .await
         .map_err(|_| AuthAPIError::InvalidToken)?;
 

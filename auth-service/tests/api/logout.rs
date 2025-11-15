@@ -21,7 +21,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
         !app.banned_token_store
             .read()
             .await
-            .token_exists(auth_cookie.value())
+            .contains_token(auth_cookie.value())
             .await
             .expect("Failed to check token existence")
     );
@@ -33,7 +33,7 @@ async fn should_return_200_if_valid_jwt_cookie() {
         app.banned_token_store
             .read()
             .await
-            .token_exists(auth_cookie.value())
+            .contains_token(auth_cookie.value())
             .await
             .expect("Failed to check token existence")
     );
@@ -63,7 +63,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
         app.banned_token_store
             .read()
             .await
-            .token_exists(auth_cookie.value())
+            .contains_token(auth_cookie.value())
             .await
             .expect("Failed to check token existence")
     );

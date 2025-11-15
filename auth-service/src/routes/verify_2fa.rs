@@ -8,7 +8,8 @@ use crate::{
     utils::auth::generate_auth_cookie,
 };
 
-pub async fn post_verify_2fa(
+#[tracing::instrument(name = "Verify 2FA code", skip_all)]
+pub async fn verify_2fa(
     State(state): State<AppState>,
     jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
@@ -34,9 +35,9 @@ pub async fn post_verify_2fa(
     two_fa_code_store
         .remove_code(&email)
         .await
-        .map_err(|_| AuthAPIError::UnexpectedError)?;
+        .map_err(|e| AuthAPIError::UnexpectedError(e.into()))?;
 
-    let auth_cookie = generate_auth_cookie(&email).map_err(|_| AuthAPIError::UnexpectedError)?;
+    let auth_cookie = generate_auth_cookie(&email).map_err(AuthAPIError::UnexpectedError)?;
     let updated_jar = jar.add(auth_cookie);
 
     Ok((StatusCode::OK, updated_jar))
