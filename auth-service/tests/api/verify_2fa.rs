@@ -9,6 +9,10 @@ use secrecy::ExposeSecret;
 use serde_json::json;
 use test_helpers::api_test;
 use uuid::Uuid;
+use wiremock::{
+    matchers::{method, path},
+    Mock, ResponseTemplate,
+};
 
 #[api_test]
 async fn should_return_200_if_correct_code() {
@@ -23,6 +27,13 @@ async fn should_return_200_if_correct_code() {
 
     let response = app.post_signup(&signup_body).await;
     assert_eq!(response.status().as_u16(), 201);
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
 
     let login_body = serde_json::json!({
         "email": email,
@@ -118,6 +129,13 @@ async fn should_return_401_if_incorrect_credentials() {
     .await
     .expect("Must deserialize to SignupResponse");
 
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
+
     let response_body = app
         .post_login(&json!({"email": email, "password": password }))
         .await
@@ -181,6 +199,13 @@ async fn should_return_401_if_old_code() {
     .await
     .expect("Must deserialize to SignupResponse");
 
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(2)
+        .mount(&app.email_server)
+        .await;
+
     let login_body = json!({
         "email": email,
         "password": password
@@ -242,6 +267,13 @@ async fn should_return_401_if_same_code_twice() {
     .json::<SignupResponse>()
     .await
     .expect("Must deserialize to SignupResponse");
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&app.email_server)
+        .await;
 
     let response_body = app
         .post_login(&json!({"email": email, "password": password }))
