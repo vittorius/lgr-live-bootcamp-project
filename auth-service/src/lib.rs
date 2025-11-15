@@ -16,9 +16,13 @@ use axum::{
 use redis::{Client, RedisResult};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use tower_http::{cors::CorsLayer, services::ServeDir};
+use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 
-use crate::{app_state::AppState, domain::AuthAPIError};
+use crate::{
+    app_state::AppState,
+    domain::AuthAPIError,
+    utils::tracing::{make_span_with_request_id, on_request, on_response},
+};
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -49,7 +53,13 @@ impl Application {
             .route("/logout", post(routes::post_logout))
             .route("/verify-token", post(routes::post_verify_token))
             .with_state(app_state)
-            .layer(cors);
+            .layer(cors)
+            .layer(
+                TraceLayer::new_for_http()
+                    .make_span_with(make_span_with_request_id)
+                    .on_request(on_request)
+                    .on_response(on_response),
+            );
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -59,7 +69,7 @@ impl Application {
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
-        println!("listening on {}", &self.address);
+        tracing::info!("listening on {}", &self.address);
         self.server.await
     }
 }

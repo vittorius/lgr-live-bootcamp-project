@@ -6,10 +6,11 @@ use crate::{
     domain::{AuthAPIError, Email, Password, User, UserStoreError},
 };
 
+#[tracing::instrument(name = "Signup", skip_all, err(Debug))]
 pub async fn post_signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
-) -> Result<impl IntoResponse, AuthAPIError> {
+) -> Result<(StatusCode, impl IntoResponse), AuthAPIError> {
     let email = Email::parse(&request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
     let password =
         Password::parse(&request.password).map_err(|_| AuthAPIError::InvalidCredentials)?;
