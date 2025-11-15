@@ -1,20 +1,14 @@
 use std::{str::FromStr, sync::Arc};
 
 use auth_service::{
-    app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
-    domain::Email,
-    get_postgres_pool, get_redis_client,
-    services::{
-        data_stores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
-        MockEmailClient,
-    },
-    utils::{
+    Application, app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, domain::Email, get_postgres_pool, get_redis_client, services::{
+        data_stores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore}, postmark_email_client::PostmarkEmailClient}, utils::{
         auth::generate_auth_cookie,
-        constants::{test, DATABASE_URL, DEFAULT_REDIS_HOSTNAME},
-    },
-    Application,
+        constants::{DATABASE_URL, DEFAULT_REDIS_HOSTNAME, test},
+    }
 };
-use reqwest::cookie::Jar;
+use reqwest::{Client, cookie::Jar};
+use secrecy::{ExposeSecret, Secret};
 use serde::Serialize;
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -22,11 +16,13 @@ use sqlx::{
 };
 use tokio::sync::RwLock;
 use uuid::Uuid;
+use wiremock::MockServer;
 
 pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
+    pub email_server: MockServer,
     pub banned_token_store: BannedTokenStoreType,
     pub two_fa_code_store: TwoFACodeStoreType,
 
@@ -48,7 +44,11 @@ impl TestApp {
             redis_connection.clone(),
         )));
         let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_connection)));
-        let email_client = Arc::new(MockEmailClient);
+
+        // Set up a mock email server
+        let email_server = MockServer::start().await; // New!
+        let base_url = email_server.uri(); // New!
+        let email_client = Arc::new(configure_postmark_email_client(base_url)); // Updated!
 
         let app_state = AppState::new(
             user_store.clone(),
@@ -75,6 +75,7 @@ impl TestApp {
             address,
             cookie_jar,
             http_client,
+            email_server,
             banned_token_store,
             two_fa_code_store,
 
@@ -167,11 +168,12 @@ impl Drop for TestApp {
 }
 
 async fn configure_postgresql(db_name: &str) -> PgPool {
-    let postgresql_conn_url = DATABASE_URL.to_owned();
+    let postgresql_conn_url = &DATABASE_URL;
 
-    configure_database(&postgresql_conn_url, db_name).await;
+    configure_database(postgresql_conn_url, db_name).await;
 
-    let postgresql_conn_url_with_db = format!("{}/{}", postgresql_conn_url, db_name);
+    let postgresql_conn_url_with_db: Secret<String> =
+        format!("{}/{}", postgresql_conn_url.expose_secret(), db_name).into();
 
     // Create a new connection pool and return it
     get_postgres_pool(&postgresql_conn_url_with_db)
@@ -191,10 +193,10 @@ pub fn get_valid_auth_token(email: &Email) -> String {
         .to_string()
 }
 
-async fn configure_database(db_conn_string: &str, db_name: &str) {
+async fn configure_database(db_conn_string: &Secret<String>, db_name: &str) {
     // Create database connection
     let connection = PgPoolOptions::new()
-        .connect(db_conn_string)
+        .connect(db_conn_string.expose_secret())
         .await
         .expect("Failed to create Postgres connection pool.");
 
@@ -205,7 +207,7 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
         .expect("Failed to create database.");
 
     // Connect to new database
-    let db_conn_string = format!("{}/{}", db_conn_string, db_name);
+    let db_conn_string = format!("{}/{}", &db_conn_string.expose_secret(), db_name);
 
     let connection = PgPoolOptions::new()
         .connect(&db_conn_string)
@@ -220,9 +222,9 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
 }
 
 async fn delete_database(db_name: &str) {
-    let postgresql_conn_url: String = DATABASE_URL.to_owned();
+    let postgresql_conn_url = &DATABASE_URL;
 
-    let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
+    let connection_options = PgConnectOptions::from_str(postgresql_conn_url.expose_secret())
         .expect("Failed to parse PostgreSQL connection string");
 
     let mut connection = PgConnection::connect_with(&connection_options)
@@ -260,4 +262,17 @@ fn configure_redis() -> redis::Connection {
         .expect("Failed to get Redis client")
         .get_connection()
         .expect("Failed to get Redis connection")
+}
+
+fn configure_postmark_email_client(base_url: String) -> PostmarkEmailClient {
+    let postmark_auth_token = Secret::new("auth_token".to_owned());
+
+    let sender = Email::parse(Secret::new(test::email_client::SENDER.to_owned())).unwrap();
+
+    let http_client = Client::builder()
+        .timeout(test::email_client::TIMEOUT)
+        .build()
+        .expect("Failed to build HTTP client");
+
+    PostmarkEmailClient::new(base_url, sender, postmark_auth_token, http_client)
 }

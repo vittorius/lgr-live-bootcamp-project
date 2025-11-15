@@ -48,8 +48,8 @@ mod tests {
         assert_eq!(store.users.len(), 0);
 
         let user = User::new(
-            Email::parse("test@example.com").unwrap(),
-            Password::parse("password123").unwrap(),
+            Email::parse("test@example.com".to_owned().into()).unwrap(),
+            Password::parse("password123".to_owned().into()).unwrap(),
             false,
         );
 
@@ -61,8 +61,8 @@ mod tests {
     async fn test_add_user_if_exists() {
         let mut store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@example.com").unwrap(),
-            Password::parse("password123").unwrap(),
+            Email::parse("test@example.com".to_owned().into()).unwrap(),
+            Password::parse("password123".to_owned().into()).unwrap(),
             false,
         );
 
@@ -77,8 +77,8 @@ mod tests {
     async fn test_get_user_if_exists() {
         let mut store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@example.com").unwrap(),
-            Password::parse("password123").unwrap(),
+            Email::parse("test@example.com".to_owned().into()).unwrap(),
+            Password::parse("password123".to_owned().into()).unwrap(),
             false,
         );
 
@@ -90,8 +90,8 @@ mod tests {
     async fn test_get_user_if_not_exists() {
         let store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@example.com").unwrap(),
-            Password::parse("password123").unwrap(),
+            Email::parse("test@example.com".to_owned().into()).unwrap(),
+            Password::parse("password123".to_owned().into()).unwrap(),
             false,
         );
 
@@ -105,16 +105,16 @@ mod tests {
     async fn test_validate_user_valid() {
         let mut store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@example.com").unwrap(),
-            Password::parse("password123").unwrap(),
+            Email::parse("test@example.com".to_owned().into()).unwrap(),
+            Password::parse("password123".to_owned().into()).unwrap(),
             false,
         );
         store.add_user(user).await.unwrap();
 
         assert!(store
             .validate_user(
-                &Email::parse("test@example.com").unwrap(),
-                &Password::parse("password123").unwrap()
+                &Email::parse("test@example.com".to_owned().into()).unwrap(),
+                &Password::parse("password123".to_owned().into()).unwrap()
             )
             .await
             .is_ok());
@@ -124,8 +124,8 @@ mod tests {
     async fn test_validate_user_invalid() {
         let mut store = HashmapUserStore::default();
         let user = User::new(
-            Email::parse("test@example.com").unwrap(),
-            Password::parse("password123").unwrap(),
+            Email::parse("test@example.com".to_owned().into()).unwrap(),
+            Password::parse("password123".to_owned().into()).unwrap(),
             false,
         );
         store.add_user(user).await.unwrap();
@@ -133,8 +133,8 @@ mod tests {
         assert_eq!(
             store
                 .validate_user(
-                    &Email::parse("test@example.com").unwrap(),
-                    &Password::parse("not_my_pass").unwrap()
+                    &Email::parse("test@example.com".to_owned().into()).unwrap(),
+                    &Password::parse("not_my_pass".to_owned().into()).unwrap()
                 )
                 .await,
             Err(UserStoreError::InvalidCredentials)
@@ -148,8 +148,8 @@ mod tests {
         assert_eq!(
             store
                 .validate_user(
-                    &Email::parse("test@example.com").unwrap(),
-                    &Password::parse("password123").unwrap()
+                    &Email::parse("test@example.com".to_owned().into()).unwrap(),
+                    &Password::parse("password123".to_owned().into()).unwrap()
                 )
                 .await,
             Err(UserStoreError::UserNotFound)

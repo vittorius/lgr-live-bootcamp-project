@@ -1,5 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
+use secrecy::Secret;
 
 use crate::{
     app_state::AppState,
@@ -13,7 +14,7 @@ pub async fn logout(
 ) -> Result<(CookieJar, impl IntoResponse), AuthAPIError> {
     let cookie = jar.get(JWT_COOKIE_NAME).ok_or(AuthAPIError::MissingToken)?;
 
-    let token = cookie.value().to_owned();
+    let token: Secret<String> = cookie.value().to_owned().into();
 
     validate_token(&token, state.banned_token_store.clone())
         .await

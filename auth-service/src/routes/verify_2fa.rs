@@ -14,11 +14,11 @@ pub async fn verify_2fa(
     jar: CookieJar,
     Json(request): Json<Verify2FARequest>,
 ) -> Result<(StatusCode, CookieJar), AuthAPIError> {
-    let email = Email::parse(&request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
-    let login_attempt_id = LoginAttemptId::parse(request.login_attempt_id)
+    let email = Email::parse(request.email.into()).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let login_attempt_id = LoginAttemptId::parse(request.login_attempt_id.into())
         .map_err(|_| AuthAPIError::InvalidCredentials)?; // Validate the login attempt ID in `request`
     let two_fa_code =
-        TwoFACode::parse(request.two_fa_code).map_err(|_| AuthAPIError::InvalidCredentials)?; // Validate the 2FA code in `request`
+        TwoFACode::parse(request.two_fa_code.into()).map_err(|_| AuthAPIError::InvalidCredentials)?; // Validate the 2FA code in `request`
 
     // TODO: reduce the lock scope here and everywhere else
     // see https://discord.com/channels/818251276378701824/1433205499775680594/1434195659958784220
